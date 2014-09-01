@@ -4,7 +4,7 @@
 %
 % Assignment 1:	The Shallow water Equation
 %
-% Method:		Finite Difference Method with second order central differences
+% Method:		Finite Difference Method with fourth order central differences
 %			    and Fourth Order Runge-Kutta Method
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,7 +24,7 @@ function Shallow_Water()
     t_max           = 100.00;
     Delta_x         =  0.9;            % Experiment with 0.02, 0.05, 0.10
     Delta_y         =  0.9;            % Experiment with 0.02, 0.05, 0.10
-    Delta_t         =  0.5;            % Experiment with 0.01, 0.02, 0.10
+    Delta_t         =  0.1;            % Experiment with 0.01, 0.02, 0.10
     
      x               = x_min:Delta_x:x_max;
      y               = y_min:Delta_y:y_max;
@@ -102,34 +102,61 @@ function [kVx,kVy,kH] = f(phiVx,phiVy,phiH)
             
              ip1=i+1;
              ip2=i-1;
+             ip3=i+2;
+             ip4=i-2;
              jp1=j+1;
              jp2=j-1;
+             jp3=j+2;
+             jp4=j-2;
             
             if(i==N_x)
-                  ip1=1;
-            end    
+                 ip1=1;
+                 ip3=2;
+            end
+            
+            if(i==N_x-1)
+                 ip3=1;
+            end
             
             if(i==1)
                 ip2=N_x;
+                ip4=N_x-1;
+            end
+            
+            if(i==2)
+                ip4=N_x;
             end
             
             if(j==N_y)
                   jp1=1;
+                  jp3=2;
+            end
+            
+            if(j==N_y-1)
+                 jp3=1;
             end
             
             if(j==1)
                 jp2=N_y;
+                jp4=N_y-1;
+            end
+            
+            if(j==2)
+                jp4=N_y;
             end
             
             
             
-            kVx(i,j) = (-g/(2*Delta_x)) * (phiH(ip1,j)-phiH(ip2,j)) - (phiVx(i,j)/(2*Delta_x))*(phiVx(ip1,j)-phiVx(ip2,j)) - (phiVy(i,j)/(2*Delta_y))*(phiVx(i,jp1)-phiVx(i,jp2));
-            kVy(i,j) = (-g/(2*Delta_y)) * (phiH(i,jp1)-phiH(i,jp2)) - (phiVx(i,j)/(2*Delta_x))* (phiVy(ip1,j)-phiVy(ip2,j)) - (phiVy(i,j)/(2*Delta_y))*(phiVy(i,jp1)-phiVy(i,jp2));
-            kH(i,j)  = (-phiVx(i,j)/(2*Delta_x))*(phiH(ip1,j)-phiH(ip2,j)) - (phiH(i,j)/(2*Delta_x))*(phiVx(ip1,j)-phiVx(ip2,j)) - (phiVy(i,j)/(2*Delta_y))*(phiH(i,jp1)-phiH(i,jp2)) - (phiH(i,j)/(2*Delta_y))*(phiH(i,jp1)-phiH(i,jp2));
+          
+%             kVx(i,j)= (-g/(12*Delta_x)*(phiH(i-2,j)-8*(phiH(i-1,j))+8*phiH(i+1,j)-phiH(i+2,j))) - (phiVx(i,j)/(12*Delta_x)*(phiVx(i-2,j)-8*(phiVx(i-1,j))+8*phiVx(i+1,j)-phiVx(i+2,j))) - (phiVy(i,j)/(12*Delta_y)*(phiVy(i,j-2)-8*(phiVy(i,j-1))+8*phiVy(i,j+1)-phiVy(i,j+2)));
+%             kVy(i,j)= (-g/(12*Delta_y)*(phiH(i,j-2)-8*(phiH(i,j-1))+8*phiH(i,j+1)-phiH(i,j+2))) - (phiVx(i,j)/(12*Delta_x)*(phiVy(i-2,j)-8*(phiVy(i-1,j))+8*phiVy(i+1,j)-phiVy(i+2,j))) - (phiVy(i,j)/(12*Delta_y)*(phiVy(i,j-2)-8*(phiVy(i,j-1))+8*phiVy(i,j+1)-phiVy(i,j+2)));
+%             kH(i,j)= (-phiVx(i,j)/(12*Delta_x)*(phiH(i-2,j)-8*(phiH(i-1,j))+8*phiH(i+1,j)-phiH(i+2,j))) - (phiH(i,j)/(12*Delta_x)*(phiVx(i-2,j)-8*(phiVx(i-1,j))+8*phiVx(i+1,j)-phiVx(i+2,j))) - (phiVy(i,j)/(12*Delta_y)*(phiH(i,j-2)-8*(phiH(i,j-1))+8*phiH(i,j+1)-phiH(i,j+2))) - (phiH(i,j)/(12*Delta_y)*(phiVy(i,j-2)-8*(phiVy(i,j-1))+8*phiVy(i,j+1)-phiVy(i,j+2)));
             
-%             kVx(i,j) = (-g/(2*Delta_x)) * (phiH(i+1,j)-phiH(i-1,j)) - (phiVx(i,j)/(2*Delta_x))*(phiVx(i+1,j)-phiVx(i-1,j)) - (phiVy(i,j)/(2*Delta_y))*(phiVx(i,j+1)-phiVx(i,j-1));
-%             kVy(i,j) = (-g/(2*Delta_y)) * (phiH(i,j+1)-phiH(i,j-1)) - (phiVx(i,j)/(2*Delta_x))* (phiVy(i+1,j)-phiVy(i-1,j)) - (phiVy(i,j)/(2*Delta_y))*(phiVy(i,j+1)-phiVy(i,j-1));
-%             kH(i,j)  = (-phiVx(i,j)/(2*Delta_x))*(phiH(i+1,j)-phiH(i-1,j)) - (phiH(i,j)/(2*Delta_x))*(phiVx(i+1,j)-phiVx(i-1,j)) - (phiVy(i,j)/(2*Delta_y))*(phiH(i,j+1)-phiH(i,j-1)) - (phiH(i,j)/(2*Delta_y))*(phiH(i,j+1)-phiH(i,j-1));
+            kVx(i,j)= (-g/(12*Delta_x)*(phiH(ip4,j)-8*(phiH(ip2,j))+8*phiH(ip1,j)-phiH(ip3,j))) - (phiVx(i,j)/(12*Delta_x)*(phiVx(ip4,j)-8*(phiVx(ip2,j))+8*phiVx(ip1,j)-phiVx(ip3,j))) - (phiVx(i,j)/(12*Delta_y)*(phiVx(i,jp4)-8*(phiVx(i,jp2))+8*phiVx(i,jp1)-phiVx(i,jp3)));
+            kVy(i,j)= (-g/(12*Delta_y)*(phiH(i,jp4)-8*(phiH(i,jp2))+8*phiH(i,jp1)-phiH(i,jp3))) - (phiVx(i,j)/(12*Delta_x)*(phiVy(ip4,j)-8*(phiVy(ip2,j))+8*phiVy(ip1,j)-phiVy(ip3,j))) - (phiVy(i,j)/(12*Delta_y)*(phiVy(i,jp4)-8*(phiVy(i,jp2))+8*phiVy(i,jp1)-phiVy(i,jp3)));
+            kH(i,j) = (-phiVx(i,j)/(12*Delta_x)*(phiH(ip4,j)-8*(phiH(ip2,j))+8*phiH(ip1,j)-phiH(ip3,j))) - (phiH(i,j)/(12*Delta_x)*(phiVx(ip4,j)-8*(phiVx(ip2,j))+8*phiVx(ip1,j)-phiVx(ip3,j))) - (phiVy(i,j)/(12*Delta_y)*(phiH(i,jp4)-8*(phiH(i,jp2))+8*phiH(i,jp1)-phiH(i,jp3))) - (phiH(i,j)/(12*Delta_y)*(phiVy(i,jp4)-8*(phiVy(i,jp2))+8*phiVy(i,jp1)-phiVy(i,jp3)));
+
+            
         end
     end
 
