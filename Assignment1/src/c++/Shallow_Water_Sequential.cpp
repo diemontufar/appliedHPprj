@@ -1,9 +1,14 @@
-	//============================================================================
-// Name        : Assignment1.cpp
-// Author      : Diego, Andres
-// Version     :
-// Copyright   : copyright 2014
-// Description : Hello World in C++, Ansi-style
+//============================================================================
+// Name        : Shallow_Water_Sequential.cpp
+// Authors     : Diego Montufar, Andres Chaves
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Method-> Finite Difference Method with fourth order central differences
+//			     and Fourth Order Runge-Kutta Method
+//				 Compile: g++ -o Shallow_Water_Sequential Shallow_Water_Sequential.cpp
+//				 Run: ./Shallow_Water_Sequential or just Shallow_Water_Sequential (Windows)
+//				 Output-> Assignment1_Files/Shallow_Water_#.csv numerated files with points on each timestep
+//               Visualize-> Open generated csv files with Paraview. 
 //============================================================================
 
 #include <iostream>
@@ -22,9 +27,9 @@ const double	y_min		=   0.00;
 const double	y_max		= 100.00;
 const double	t_min		=  0.00;
 const double	t_max		= 100.00;
-const double	Delta_x		=  0.4;
-const double	Delta_y		=  0.4;
-const double	Delta_t		=  0.04;
+const double	Delta_x		=  1;
+const double	Delta_y		=  1;
+const double	Delta_t		=  0.1;
 const double    g           = 9.81;
 
 const int		N_x			=  (x_max-x_min)/Delta_x+1;
@@ -36,9 +41,11 @@ void	f(double** kVx, double** kVy, double** kH, double** phiVx, double** phiVy, 
 void	write(fstream& file, double** phiH, double** phiVx, double** phiVy,int N_x, int N_y, int t);
 
 
-int		main(int argc, char** argv)
+int	main(int argc, char** argv)
 {
-	//cout.precision(15);
+	char myFileName[64];
+	fstream	file;
+
 	// Simulation parameters
 	double		x			= 0;
 	double		y			= 0;
@@ -46,10 +53,9 @@ int		main(int argc, char** argv)
 	int			i			= 0;
 	int         j           = 0;
 	int			l			= 0;
-	fstream		file;
-		
+	
 	// Allocate arrays
-	cout << "Allocating arrays " << endl;
+	cout << "Allocating arrays... " << endl;
 		
 	double**		tempPhiVx		= new double* [N_x];
 	double**		tempPhiVy		= new double* [N_x];
@@ -74,11 +80,11 @@ int		main(int argc, char** argv)
 
 	for(i=0; i<N_x; i++)
 	{
-		tempPhiVx[i]		= new double[N_y];
-		tempPhiVy[i]		= new double[N_y];
+		tempPhiVx[i]	= new double[N_y];
+		tempPhiVy[i]	= new double[N_y];
 		tempPhiH[i]		= new double[N_y];
-		phiVx[i]			= new double[N_y];
-		phiVy[i]			= new double[N_y];
+		phiVx[i]		= new double[N_y];
+		phiVy[i]		= new double[N_y];
 		phiH[i]			= new double[N_y];
 		k1Vx[i]			= new double[N_y];
 		k1Vy[i]			= new double[N_y];
@@ -91,8 +97,7 @@ int		main(int argc, char** argv)
 		k3H[i]			= new double[N_y];
 		k4Vx[i]			= new double[N_y];
 		k4Vy[i]			= new double[N_y];
-		k4H[i]		= new double[N_y];
-
+		k4H[i]			= new double[N_y];
 	}
 
 	
@@ -110,7 +115,8 @@ int		main(int argc, char** argv)
 	memset(k4H, 0.0, N_x*N_y*sizeof(k4H[0][0]));*/
 
 	// Set initial condition
-	cout << "Setting initial conditions " << endl;
+	cout << "Setting initial conditions... " << endl;
+	
 	t	= t_min;
 	for(i=0; i<N_x; i++)
 	{  
@@ -129,11 +135,14 @@ int		main(int argc, char** argv)
 			phiVy[i][j] = 0;
 		}
 	}
-	
-	file.open("Shallow_Water.data", ios::out);
-	
+	// Write the solution
+	sprintf(myFileName, "Assignment1_Files/Shallow_Water_%d.csv", 1);
+	//sprintf(myFileName, "Shallow_Water.csv");
+	file.open(myFileName, ios::out);
 	write(file, phiH, phiVx, phiVy, N_x, N_y, 0);
-	cout << "Time Marching Loop " << endl;
+	file.close();
+
+	cout << "Time Marching Loop.. " << endl;
 	// Time marching loop
 	for(l=0; l<N_t-1; l++)
 	{
@@ -190,13 +199,16 @@ int		main(int argc, char** argv)
 		}
 		
 		// Write the solution
-	        write(file, phiH, phiVx, phiVy, N_x, N_y, t+1);
+		sprintf(myFileName, "Assignment1_Files/Shallow_Water_%d.csv", l+1);
+	    file.open(myFileName, ios::out);
+	    write(file, phiH, phiVx, phiVy, N_x, N_y, t+1);
+	    file.close();	    
 		
+		//Print Time marching loop
 		cout << "t = " << t << endl;
 	}
-	
 	file.close();
-		
+	
 	// Deallocate arrays
 	delete [] tempPhiVx;
 	delete [] tempPhiVy;
@@ -217,7 +229,7 @@ int		main(int argc, char** argv)
 	delete [] phiVx;
 	delete [] phiVy;
 	delete [] phiH;
-	
+
 	return 0;
 }
 
@@ -294,11 +306,14 @@ void	write(fstream& file, double** phiH, double** phiVx, double** phiVy, int N_x
 {
 	for(int i=0; i<N_x; i++)
 	{ 
+		double coordX = i*Delta_x;
 		for(int j=0; j<N_y; j++)
 		{
-			file << std::fixed << std::setprecision(15) << phiH[i][j] << "\t";
+			double coordY = j*Delta_y;
+			//file << std::fixed << std::setprecision(4) << phiH[i][j] << "\t"; //One single file
+			file << std::fixed << std::setprecision(4) << phiH[i][j] <<"," << coordX << "," << coordY<< "\n"; //multiple files
 		}
-		file << "\n";
+		//file << "\n";
 	}
 	return;
 }
