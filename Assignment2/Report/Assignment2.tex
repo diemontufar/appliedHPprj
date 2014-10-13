@@ -37,7 +37,7 @@ The heat equation can be used to describe the temperature variation through a
 solid body. The equation derives from the principle of conservation of energy and
 and gives rise to a second order linear PDE of the form:
 	
-	\begin{equation}
+	\begin{equation}\label{eq:equation}
 		\rho C \frac{\partial T}{\partial t} = k \nabla^2 T
 	\end{equation}
 	
@@ -63,7 +63,13 @@ which defines a Robin boundary condition. Here we assumed that the convection co
 	
 	\section{Governing Equations}
 
-In order to solve the Heat Equation using the Finite Difference method, we are going to start by deriving the weak form of Equation (1). Applying this numerical method implies a series of steps until we get a global system of ...
+In order to solve the Heat Equation using the Finite Element method, we are going to start by deriving the weak form of Equation (1). Applying this numerical method implies a series of steps until we get a global system of equations that must be assembled in order to compute the solution. So we are going to follow the next steps:
+
+\begin{enumerate}
+  \item Derive the weak form of the Heat Equation by applying the Galerking Weighted residual method.
+  \item Express our field variable $T$ and its derivatives in terms of the shape functions for a linear tetrahedral element.
+  \item Assemble the global system of equations.
+\end{enumerate}
 
 \subsection{Galerking Weighted residual method}
 Weighted residual methods assume that a solution can be approximated analytically or piecewise analytically. The idea of this method is that we can multiply the residual by a weighting function and force the integral of the weighted expression over the domain to vanish:
@@ -80,37 +86,66 @@ Weighted residual methods assume that a solution can be approximated analyticall
 		\phi(x) = \sum_{n=0}^N a_n(x)p_n(x), \quad \text{Where}  \quad W_n(x)=p_n(x)
 	\end{equation}		
 	
-	Applying equation (4) to the Heat Equation we have:
+	Applying equation (4) to the Heat Equation (1) we have:
+
+$$
+r={\rho C \frac{\partial T}{\partial t} - k \nabla^2 T}
+$$
 
 	$$\int\limits_{\Omega} W ({\rho C \frac{\partial T}{\partial t} - k \nabla^2 T}) d\Omega = 0$$
 	
-	This is an appropriate time to include the convection term into our equation \hilight{WHY??} and expanding terms we get:
+	This is an appropriate time to include the convection term into our equation and expanding terms we get:
 	
 	\begin{equation}
 		\int\limits_{\Omega} W \rho C \frac{\partial T}{\partial t} d\Omega - \int\limits_{\Omega} W k \nabla^2 T d\Omega + \int\limits_{\Omega} W Q_{air} d\Omega = 0
 	\end{equation}
 
-	Modify diffusive term \hilight{WHY??}
-	\hilight{Here goes product rule}
+	We can modify the diffusive second order term by applying the product rule for derivatives which is defined by:
+	
+\begin{align*}
+\nabla\cdot(W\nabla T) &= \nabla W \cdot\nabla T+W \nabla \cdot\nabla T \\
+&=\nabla W \cdot\nabla T+W \nabla^2 T
+\end{align*}
+
+In our second term of Equation (6): Applying the product rule, rearranging, and integrating over the domain we get:
 		
-	$$\int\limits_{\Omega} W k \nabla^2 T d\Omega = \int\limits_{\Omega} \nabla \cdot ({Wk\nabla T}) d\Omega - \int\limits_{\Omega} \nabla W \cdot k \nabla T d\Omega$$
-
-	\hilight{Here goes the divergence theorem}
 	\begin{equation}
-	\int\limits_{\Omega} W k \nabla^2 T d\Omega = \int\limits_{\Gamma} {Wk\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Omega} \nabla W \cdot k \nabla T d\Omega
+	\int\limits_{\Omega} W k \nabla^2 T d\Omega = \int\limits_{\Omega} \nabla \cdot ({Wk\nabla T}) d\Omega - \int\limits_{\Omega} \nabla W \cdot k \nabla T d\Omega
 	\end{equation}
 
-	Substitute Equation () in ():
+	in order to eliminate second order terms of the Equation (7), another important concept we are going to use is the theorem of divergence which can be expressed as follows:
 	
 	$$
-	\int\limits_{\Omega} W \rho C \frac{\partial T}{\partial t} d\Omega -  \int\limits_{\Gamma_{Base}} {Wk\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Omega} \nabla W \cdot k \nabla T d\Omega + \int\limits_{\Gamma_{Fins}} W Q_{air} d\Gamma = 0
+	\int\limits_{\Omega} \nabla^22 T d\Omega = \int\limits_{\Gamma} \nabla T \cdot d\Gamma 
 	$$
 	
+Now, we can make use of the Divergence Theorem and apply it to the second order term of Equation (7) as follows:	
+	
+	\begin{equation}
+	\int\limits_{\Omega} k W \nabla^2 T d\Omega = \int\limits_{\Gamma} {kW\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Omega} k \nabla W \cdot \nabla T d\Omega
+	\end{equation}
+
+	Substitute Equation (8) in (6) we get:
+	
+	\begin{equation}
+	\int\limits_{\Omega} \rho C W \frac{\partial T}{\partial t} d\Omega -  \int\limits_{\Gamma_{Base}} {kW\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Omega} k \nabla  W \cdot \nabla T d\Omega + \int\limits_{\Gamma_{Fins}} W Q_{air} d\Gamma = 0
+	\end{equation}
+	
+	The important point here is that applying the Galerkin method of weighted residuals this way means that for every element we get a 'sub' system of equations local to each element and in terms of the local nodal values $1...N_n$, that must be assembled
+into a global system of equations with global indices $1...N_p$
+		
 	Then we can see the second term in the equation corresponds to the value of $Q_{cpu}$ as stated in the model problem. In contrast to other methods, the Neumann boundary conditions are automatically incorporated into the integral form of the PDE. Rearranging terms we get the Weak form of the Heat Equation:
-	
+
 	\begin{equation}
-	\int\limits_{\Omega} W \rho C \frac{\partial T}{\partial t} d\Omega + \int\limits_{\Omega} \nabla W \cdot k \nabla T d\Omega = \int\limits_{\Gamma_{Base}} {Wk\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Gamma_{Fins}} W {h(T-T_{air})} d\Gamma
+	\int\limits_{\Omega} \rho C W \frac{\partial T}{\partial t} d\Omega + \int\limits_{\Omega} k \nabla W \cdot \nabla T d\Omega = \int\limits_{\Gamma_{Base}} {kW\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Gamma_{Fins}} W {h(T-T_{air})} d\Gamma
 	\end{equation}
+
+The overall global system of equations to solve our generic scalar transport equation is then given by:
+
+	\begin{equation}
+	\sum_{n=1}^{N_p}\int\limits_{\Omega} (W \rho C \frac{\partial T}{\partial t} + \nabla W \cdot k \nabla T) d\Omega = \sum_{n=1}^{N_p} \int\limits_{\Gamma_{Base}} {Wk\nabla T} \cdot d \mathbf{\Gamma} - \sum_{n=1}^{N_p} \int\limits_{\Gamma_{Fins}} W {h(T-T_{air})} d\Gamma
+	\end{equation}
+
 
 	\subsection{Shape functions}
 
@@ -124,12 +159,11 @@ T(\mathbf{x},t) = \sum_{n=1}^{N_n} \eta_n(\mathbf{x})T_n(t)
 
 Where $\eta_n$ are known as the \textsl{shape functions}, which are functions of spatial location only, while the nodal values of $T$ are functions of time only. 
 
-If we now substitute in for the weighting function, (substitute in our assumed form of the solution from Equation ()), and consider the domain of integration to be the domain of an element itself, the weighted residual expression can be rewritten as:
+If we now substitute in our assumed form of the solution from Equation (10), and consider the domain of integration to be the domain of an element itself, the weighted residual expression can be rewritten using Einstein summation notation as:
 
 	\begin{equation}
 	\int\limits_{\Omega_e} \eta_p\eta_q \rho C \frac{\partial T}{\partial t} d\Omega + \int\limits_{\Omega_e} k \nabla \eta_p \cdot \nabla \eta_q T_q d\Omega = \int\limits_{\Gamma_{e}}{k\eta_p\nabla T} \cdot d \mathbf{\Gamma} - \int\limits_{\Gamma_{e}}h\eta_p(\eta_qT_q-T_{e}) d\Gamma
 	\end{equation}
-
 
 Then the overall System of Equations to solve the Heat Equation is the given by:
 
@@ -143,21 +177,21 @@ We can then rewrite the system of equations in the form:
  M\dot{T} = KT + s
 \end{equation}
 
-Where $M$ represents the Mass matrix, $K$ the Stiffness Matrix, both have size of $N_p$x$N_p$ and finally the $s$ term that is the load vector with size $N_p$x$1$. For the Heat Equation we can recognize each term of Equation() in the Equation () as follows:
+Where $M$ represents the Mass matrix, $K$ the Stiffness Matrix, both have size of $N_p$x$N_p$ and finally the $s$ term that is the load vector with size $N_p$x$1$. For the Heat Equation we can recognize each term of Equation(15) in the Equation (13) as follows:
 
 \begin{equation}
  M_{pq}^e = \int\limits_{\Omega_e} \eta_p\eta_q \rho C d\Omega
 \end{equation}
 
 \begin{equation}
- K_{pq}^e = -\int\limits_{\Omega_e} k \nabla \eta_p \cdot \nabla \eta_q d\Omega + h \int\limits_{\Gamma_e} \eta_p \eta_q d\Gamma
+ K_{pq}^e = -\int\limits_{\Omega_e} k \nabla \eta_p \cdot \nabla \eta_q d\Omega - h \int\limits_{\Gamma_e} \eta_p \eta_q d\Gamma
 \end{equation}
 
 \begin{equation}
  S_{p}^e = h T_{air} \int\limits_{\Gamma_e} \eta_p d\Gamma + k \int\limits_{\Gamma_{e}}{\eta_p\nabla T} \cdot d \mathbf{\Gamma}
 \end{equation}
 
-For this case we are going to use tetrahedral elements, which means we are going to have 4 nodes in a 3D element as shown in Figure(). In order to derive the corresponding shape functions we begin by assuming a trial solution which takes the form:
+For this case we are going to use tetrahedral elements, which means we are going to have 4 nodes in a 3D \hilight{element as shown in Figure()}. In order to derive the corresponding shape functions we begin by assuming a trial solution which takes the form:
 
 \begin{equation}
 T(x,y,z) = a_0+a_1x+a_2y+a_3z
@@ -172,7 +206,7 @@ Where $a_0$,$a_1$,$a_2$ and $a_3$ are scalar coefficients. This is essentially t
 \begin{bmatrix} \mathbf{p_1} \\ \mathbf{p_2} \\ \mathbf{p_3} \\ \mathbf{p_4} \end{bmatrix}\mathbf{a} = C\mathbf{a}
 \end{equation}
 
-Where $p_n={1 x_n y_n z_n}$, C will be a square 4x4 matrix and we can solve for the unknown parameters by computing $\mathbf{a}=C^{-1}\mathbf{T}$. Doing so we can find our shape functions by substituting these coefficients back into our trial solution, So we can factor out the nodal values and rewrite the solution in the form:
+Where $p_n=\{1 \thinspace x_n \thinspace y_n \thinspace z_n\}$, $C$ will be a square $4$x$4$ matrix and we can solve for the unknown parameters by computing $\mathbf{a}=C^{-1}\mathbf{T}$. Doing so we can find our shape functions by substituting these coefficients back into our trial solution, So we can factor out the nodal values and rewrite the solution in the form:
 
 \begin{equation}
 T(x,y,z) = \sum_{n=1}^{N_n} \eta_n{(x,y,z)} T_n = \eta_1 T_1 + \eta_2 T_2 + \eta_3 T_3 + \eta_4 T_4
@@ -213,7 +247,7 @@ and:
 Where for the 3D case $\Omega_e$ and $\Gamma_e$ represent the volume and face area of a tetrahedron respectively.
 
 Let's first
-consider the integration of the shape functions as required in the mass matrix from \hilight{Equation ()}:
+consider the integration of the shape functions as required in the mass matrix from Equation (16):
 
 $$
 M_{p,q}^e = \rho C \int\limits_{\Omega_e} \eta_p \eta_q d\Omega
@@ -222,7 +256,7 @@ $$
 Remembering that p and q are in the range of 1 to 4 for the linear tetrahedral element,
 what we end up with is a local or 'sub' matrix $M_e$, which for our linear tetrahedral
 element will be a 4 x 4 matrix. In order to evaluate each term in the matrix we
-simply input the values of p and q to the integration formula in \hilight{Equation ()}. For
+simply input the values of p and q to the integration formula in Equation (23). For
 the case where p and q are equal (i.e. for elements on the main diagonal) we get:
 
 \begin{align*}
@@ -253,7 +287,7 @@ which is simple enough that we could write out the whole thing as:
 M^e = \frac{\rho C \Omega_e}{20}{\begin{bmatrix} 2 & 1 & 1 & 1 \\ 1 & 2 & 1 & 1 \\ 1 & 1 & 2 & 1 \\ 1 & 1 & 1 & 2 \end{bmatrix}}
 \end{equation}
 
-Considering now the contribution of the diffusive term to the stiffness matrix we have:
+Considering now the contribution of the diffusive term to the stiffness matrix, and writing shape function derivative terms in the form of a column vector with modulo 3 notation for compactness we have:
 
 
 \begin{align*}
@@ -262,16 +296,20 @@ Considering now the contribution of the diffusive term to the stiffness matrix w
  \begin{Bmatrix} 
  (y_{p+3}-y_{p+1})(z_{p+2}-z_{p+1})-(y_{p+2}-y_{p+1})(z_{p+3}-z_{p+1}) \\
  (x_{p+2}-x_{p+1})(z_{p+3}-z_{p+1})-(x_{p+3}-x_{p+1})(z_{p+2}-z_{p+1}) \\
- (x_{p+3}-x_{p+1})(y_{p+2}-y_{p+1})-(x_{p+2}-x_{p+1})(y_{p+3}-y_{p+1})
+ (x_{p+3}-x_{p+1})(y_{p+2}-y_{p+1})-(x_{p+2}-x_{p+1})(y_{p+3}-y_{p+1}) \\
+ \cdots
  \end{Bmatrix} \\
  &\dot{•} 
  \frac{1}{6\Omega_e} 
  \begin{Bmatrix} 
  (y_{q+3}-y_{q+1})(z_{q+2}-z_{q+1})-(y_{q+2}-y_{q+1})(z_{q+3}-z_{q+1}) \\
  (x_{q+2}-x_{q+1})(z_{q+3}-z_{q+1})-(x_{q+3}-x_{q+1})(z_{q+2}-z_{q+1}) \\
- (x_{q+3}-x_{q+1})(y_{q+2}-y_{q+1})-(x_{q+2}-x_{q+1})(y_{q+3}-y_{q+1})
+ (x_{q+3}-x_{q+1})(y_{q+2}-y_{q+1})-(x_{q+2}-x_{q+1})(y_{q+3}-y_{q+1}) \\
+ \cdots
  \end{Bmatrix}
 \end{align*}
+
+Performing the Integration we get:
 
 \begin{equation}
 \begin{aligned}
@@ -281,13 +319,14 @@ Considering now the contribution of the diffusive term to the stiffness matrix w
  (y_{p+3}-y_{p+1})(z_{p+2}-z_{p+1})-(y_{p+2}-y_{p+1})(z_{p+3}-z_{p+1}) \\
  (x_{p+2}-x_{p+1})(z_{p+3}-z_{p+1})-(x_{p+3}-x_{p+1})(z_{p+2}-z_{p+1}) \\
  (x_{p+3}-x_{p+1})(y_{p+2}-y_{p+1})-(x_{p+2}-x_{p+1})(y_{p+3}-y_{p+1}) \\
- (y_{p+3}-y_{p+2})(z_{p+2}-z_{p+1})-(y_{p+}-y_{p+})(z_{p+3}-z_{p+1})
+ \cdots
  \end{Bmatrix} \\
  &\dot{•} 
  \begin{Bmatrix} 
  (y_{q+3}-y_{q+1})(z_{q+2}-z_{q+1})-(y_{q+2}-y_{q+1})(z_{q+3}-z_{q+1}) \\
  (x_{q+2}-x_{q+1})(z_{q+3}-z_{q+1})-(x_{q+3}-x_{q+1})(z_{q+2}-z_{q+1}) \\
- (x_{q+3}-x_{q+1})(y_{q+2}-y_{q+1})-(x_{q+2}-x_{q+1})(y_{q+3}-y_{q+1})
+ (x_{q+3}-x_{q+1})(y_{q+2}-y_{q+1})-(x_{q+2}-x_{q+1})(y_{q+3}-y_{q+1}) \\
+ \cdots
  \end{Bmatrix} {\Omega_e}
 \end{aligned}
 \end{equation}
@@ -296,35 +335,32 @@ The important point to note is that the dot product between these two vectors
 produce a scalar value. Now we obtain the second part of the contribution to the stiffness matrix again first evaluating the integral for the main diagonal where p=q:
 
 \begin{align*}
- h \int\limits_{\Gamma_e} \eta_p \eta_p d\Gamma & = 
- h\int\limits_{\Gamma_e} \eta_p^2 \eta_q^0 \eta_r^0  d{\Gamma} \\
- & = \frac{h 2!0!0!2\Gamma_e}{(2+0+0+2)!} \\
- & = \frac{2h\Gamma_e}{12}
+ -h \int\limits_{\Gamma_e} \eta_p \eta_p d\Gamma & = 
+ -h\int\limits_{\Gamma_e} \eta_p^2 \eta_q^0 \eta_r^0  d{\Gamma} \\
+ & = -\frac{h 2!0!0!2\Gamma_e}{(2+0+0+2)!} \\
+ & = -\frac{2h\Gamma_e}{12}
 \end{align*}
 
 Then we do the same for the off diagonal terms where p $\neq$ q:
 
 \begin{align*}
- h \int\limits_{\Gamma_e} \eta_p \eta_q d\Gamma & = 
- h\int\limits_{\Gamma_e} \eta_p^1 \eta_q^1 \eta_r^0  d{\Gamma} \\
- & = \frac{h 1!1!0!2\Gamma_e}{(1+1+0+2)!} \\
- & = \frac{h\Gamma_e}{12}
+ -h \int\limits_{\Gamma_e} \eta_p \eta_q d\Gamma & = 
+ -h\int\limits_{\Gamma_e} \eta_p^1 \eta_q^1 \eta_r^0  d{\Gamma} \\
+ & = -\frac{h 1!1!0!2\Gamma_e}{(1+1+0+2)!} \\
+ & = -\frac{h\Gamma_e}{12}
 \end{align*}
 
 So we can write a single expression for the any element in the contribution term for our local stiffness matrix as:
 
 $$
-K_{p,q}^e = \frac{h (1+\delta_{pq})}{12}
+K_{p,q}^e =- \frac{h (1+\delta_{pq})}{12}
 $$
 
 which is simple enough that we could write out the whole thing as:
 
 \begin{equation}
-K^e = \frac{h \Gamma_e}{12}{\begin{bmatrix} 2 & 1 & 1  \\ 1 & 2 & 1  \\ 1 & 1 & 2 \end{bmatrix}}
+K^e = -\frac{h \Gamma_e}{12}{\begin{bmatrix} 2 & 1 & 1  \\ 1 & 2 & 1  \\ 1 & 1 & 2 \end{bmatrix}}
 \end{equation}
-
-The next step is to sum up \hilight{Equations () and ()} in order to obtain our local stiffness matrix:
-
 
 Considering the contribution of the Neumann boundary condition term to
 the load vector, we have to perform the integral:
@@ -333,7 +369,7 @@ the load vector, we have to perform the integral:
  \mathbf{s}_p^f = k \int\limits_{\Gamma_{e}}{\eta_p\nabla T} \cdot d \mathbf{\Gamma}
 \end{align*}
 
-An important point to note is that we will only perform this integral over the boundary of the element (which in our case translates into a  face of a triangle) if that element happens to be on a Neumann boundary of our computational domain. In this case p will be in the range 1 to 3. Because our Neumann boundary conditions are applied normal to the boundary, the gradient can be specified as a scalar (the implied direction being normal to the boundary edge) and so the dot product will drop out of the integral. We will furthermore assume that $T$ does not vary over the boundary of the element. Making use of the second integration formula \hilight{()} we then have:
+An important point to note is that we will only perform this integral over the boundary of the element (which in our case translates into a  face of a triangle) if that element happens to be on a Neumann boundary of our computational domain. In this case p will be in the range 1 to 3. Because our Neumann boundary conditions are applied normal to the boundary, the gradient can be specified as a scalar (the implied direction being normal to the boundary face) and so the dot product will drop out of the integral. We will furthermore assume that $T$ does not vary over the boundary of the element. Making use of the second integration formula (24) we then have:
 
 \begin{align*}
  \mathbf{s}_p^f &= k \int\limits_{\Gamma_{e}}{\eta_p\nabla T} \cdot d \mathbf{\Gamma} \\
@@ -365,12 +401,6 @@ So we can write the contribution to our load vector as:
 \mathbf{s}_p^e = \frac{hT_{air}\Gamma_e}{3}
 \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 
 \end{bmatrix}
-\end{equation}
-
-And the load vector as a sum of Equations \hilight{() and ()}:
-
-\begin{equation}
-\mathbf{s}^e = 
 \end{equation}
 
 %----------------------------------------------------------

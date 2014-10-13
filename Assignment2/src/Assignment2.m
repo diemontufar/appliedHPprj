@@ -59,16 +59,16 @@ function Example15_3()
       
     % Set up animated visualization of results
     figure('WindowStyle', 'docked');
-    Solution        = trisurf(Elements, Points(:,1), Points(:,2), phi(:,1));
-    axis('equal', [x_min x_max y_min y_max 1 2]);
+    Solution        = trisurf(Elements, Points(:,1), Points(:,2),Points(:,3), phi(:,1));
+    axis('equal', [x_min x_max y_min y_max z_min z_max 1 2]);
     grid on;
     xlabel('x');
     ylabel('y');
     zlabel('\phi');
-    view([45 25]);
+    %view([45 25]);
     colormap('Winter');
     drawnow;
-    
+
     % Time marching loop
     for l=1:N_t-1
         
@@ -76,7 +76,7 @@ function Example15_3()
         phi(Free,l+1)	= A(Free,Free)\(b(Free) - A(Free,Fixed)*phi(Fixed,l+1));
             
         % Plot phi at every timestep
-        set(Solution, 'Vertices', [Points(:,1) Points(:,2) phi(:,l+1)], 'CData', phi(:,l+1));
+        set(Solution, 'Vertices', [Points(:,1) Points(:,2) Points(:,3) phi(:,l+1)], 'CData', phi(:,l+1));
         title(['t = ' num2str(t(l+1))]);
         drawnow;
     
@@ -95,28 +95,32 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
                        1, 2, 1, 1;
                        1, 1, 2, 1;
                        1, 1, 2, 1];
-    K1              = [2, 1, 1; 
-                       1, 2, 1;
-                       1, 1, 2];
-	s_e             = [1; 1; 1];
+    K1              = [1; 1; 1; 1]; 
+    s_e             = [1; 1; 1; 1];
         
-    % Calculate face lengths
+    % Calculate face areas
     for f=1:N_f	
         x           = Points(Faces(f, :), 1);
         y           = Points(Faces(f, :), 2);
         z           = Points(Faces(f, :), 3);
-        Gamma(f)	= sqrt(((y(2)-y(1))*(z(3)-z(1)) - (z(2)-z(1))*(y(3)-y(1)))^2 + ((z(2)-z(1))*(x(3)-x(1)) - ...
-                            (x(2)-x(1))*(z(3)-z(1)))^2 + ((x(2)-x(1))*(y(3)-y(1)) - (y(2)-y(1))*(x(3)-x(1)))^2)/2;
+        Gamma(f)	= sqrt(((y(2)-y(1))*(z(3)-z(1)) - (z(2)-z(1))*(y(3)-y(1)))^2 ... 
+           + ((z(2)-z(1))*(x(3)-x(1)) - (x(2)-x(1))*(z(3)-z(1)))^2 ...
+           + ((x(2)-x(1))*(y(3)-y(1)) - (y(2)-y(1))*(x(3)-x(1)))^2)/2;
     end
 
-    % Calculate element areas
+    % Calculate element volumes
     for e=1:N_e	
         x           = Points(Elements(e, :), 1);
         y           = Points(Elements(e, :), 2);
         z           = Points(Elements(e, :), 3);
-        Omega(e)	= abs( x(1)*y(2)*z(3) - x(1)*y(3)*z(2) - x(2)*y(1)*z(3) + x(2)*y(3)*z(1) + x(3)*y(1)*z(2) - x(3)*y(2)*z(1) - x(1)*y(2)*z(4) +...
-                            x(1)*y(4)*z(2) + x(2)*y(1)*z(4) - x(2)*y(4)*z(1) - x(4)*y(1)*z(2) + x(4)*y(2)*z(1)+ x(1)*y(3)*z(4) - x(1)*y(4)*z(3) - x(3)*y(1)*z(4) +...
-                            x(3)*y(4)*z(1) + x(4)*y(1)*z(3) - x(4)*y(3)*z(1) - x(2)*y(3)*z(4) + x(2)*y(4)*z(3) + x(3)*y(2)*z(4) - x(3)*y(4)*z(2) - x(4)*y(2)*z(3) + x(4)*y(3)*z(2) ) /6;
+        Omega(e)	= abs(    x(1)*y(2)*z(3) - x(1)*y(3)*z(2) - x(2)*y(1)*z(3) ...
+                            + x(2)*y(3)*z(1) + x(3)*y(1)*z(2) - x(3)*y(2)*z(1) ...
+                            - x(1)*y(2)*z(4) + x(1)*y(4)*z(2) + x(2)*y(1)*z(4) ...
+                            - x(2)*y(4)*z(1) - x(4)*y(1)*z(2) + x(4)*y(2)*z(1) ...
+                            + x(1)*y(3)*z(4) - x(1)*y(4)*z(3) - x(3)*y(1)*z(4) ...
+                            + x(3)*y(4)*z(1) + x(4)*y(1)*z(3) - x(4)*y(3)*z(1) ...
+                            - x(2)*y(3)*z(4) + x(2)*y(4)*z(3) + x(3)*y(2)*z(4) ...
+                            - x(3)*y(4)*z(2) - x(4)*y(2)*z(3) + x(4)*y(3)*z(2) ) /6;
     end
 
 	% Assemble M, K, and s
@@ -140,10 +144,10 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
                                 
                 M(m,n)      = M(m,n) + M_e(p,q)*rho*C*Omega(e)/20;
                 %K(m,n)      = K(m,n) - dot(v,gradEta_q)/3*Omega(e) - mu*dot(gradEta_p,gradEta_q)*Omega(e);
-                K(m,n)      = K(m,n) - k*dot(gradEta_p,gradEta_q)/36*Omega(e) + h*Gamma(e)/12*K1;
+                K(m,n)      = K(m,n) - k*dot(gradEta_p,gradEta_q)/36*Omega(e);
                       
             end
-            s(m)            = s(m)   + s_e(p)*Qcpu*Gamma(e)/3 + s_e(p)*h*Tair*Gamma(e)/3;
+            %s(m)            = s(m)   + s_e(p)*Qcpu*Gamma(e)/3 + s_e(p)*h*Tair*Gamma(e)/3;
         end
         
     end
@@ -158,25 +162,27 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
                     m     	= Nodes(p);
                     s(m)	= s(m)      + k*Boundaries(b).value*Gamma(Boundaries(b).indices(f))/3;
                 end
-            end
-        elseif      strcmp(Boundaries(b).type, 'dirichlet')
-            for p=1:Boundaries(b).N
-                m           = Boundaries(b).indices(p);
-                phi(m,:)	= Boundaries(b).value;
-            end
-            Fixed = [Fixed; Boundaries(b).indices'];
-            
+            end        
         elseif strcmp(Boundaries(b).type, 'robin')
            for f=1:Boundaries(b).N;
                 Nodes       = Faces(Boundaries(b).indices(f),:);
                 for p=1:3
                     m     	= Nodes(p);
                     s(m)	= s(m)      + h*Tair*Gamma(Boundaries(b).indices(f))/3;
+                    phi(m,:)	= Boundaries(b).value;
+                    
                 end
-            end
+           end
+%             for p=1:Boundaries(b).N
+%                m        = Boundaries(b).indices(p);
+%                phi(m,:)	= Boundaries(b).value;
+%             end
+            Fixed = [Fixed; Boundaries(b).indices'];
         end
+
+        Free            = setdiff(1:N_p, Fixed);
     end
-    Free            = setdiff(1:N_p, Fixed);
+    
 
 return
                        
