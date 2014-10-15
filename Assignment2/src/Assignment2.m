@@ -4,43 +4,41 @@
 %
 % Assignment 2: The Heat Equation
 %
+% Group members: Diego Montufar/Andres Chaves
+%
 % Problem:	rho C dphi/dt = -k Grad^2 phi
 %
 % Method:	Finite Element Method with linear 3D tetrahedral elements and 
-%			Implicit Euler Method
+%                   Implicit Euler Method
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function Example15_3()
+function HeatEquationFEM()
 
     close all; clear all; clc;
 
-    %global v mu psi rho C k;
     global rho C k h Tair Qcpu;
 
     [Points Faces Elements Boundaries N_p N_f N_e N_b] = readGrid();
     
     % Simulation parameters
     x_min           = 0.00;
-    x_max           = 1.00;
+    x_max          = 0.02;
     y_min           = 0.00;
-    y_max           = 1.00;
+    y_max          = 0.02;
     z_min           = 0.00;
-    z_max           = 1.00;
-    t_min           = 0.00;
-    t_max           = 2.00;        
-    Delta_t         = 0.01;
+    z_max          = 0.02;
+    t_min            = 0.00;
+    t_max           = 100.00;        
+    Delta_t          = 0.01;
     
-    rho             = 8954;
-    C               = 380;
-    k               = 386;
-    h               = 100;
-    Tair            = 300;
-    Qcpu            = 40000;
-    
-    %v               = [0.50, 0.50];
-    %mu              = 0.01;
-    %psi             = 0.20;
+    rho             = 8954.00;
+    C                = 380.00;
+    k                 = 386.00;
+    h                 = 100.00;
+    Tair             = 300.00;
+    Qcpu           = 40000.00;
+        
 	t               = t_min:Delta_t:t_max;
     N_t             = length(t);
 
@@ -51,7 +49,7 @@ function Example15_3()
     s               = sparse(N_p, 1);
        
     % Set initial condition
-    %phi(:,1)        = exp(-50*((Points(:,1)-0.3).^2+(Points(:,2)-0.3).^2))+1;
+    phi(:,1)        = 300;
     
     [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Elements, Boundaries, N_p, N_f, N_e, N_b);
     
@@ -60,27 +58,37 @@ function Example15_3()
     % Set up animated visualization of results
     figure('WindowStyle', 'docked');
     Solution        = trisurf(Elements, Points(:,1), Points(:,2),Points(:,3), phi(:,1));
-    axis('equal', [x_min x_max y_min y_max z_min z_max 1 2]);
+    colorbar;
+    axis('equal', [x_min 0.02 y_min 0.02 z_min 0.02 340 343]);
     grid on;
     xlabel('x');
     ylabel('y');
     zlabel('\phi');
-    %view([45 25]);
+    view([45 25]);
     colormap('Winter');
     drawnow;
 
     % Time marching loop
     for l=1:N_t-1
         
-        b               = M*phi(:,l) + Delta_t*s;
+        b = M*phi(:,l) + Delta_t*s;
         phi(Free,l+1)	= A(Free,Free)\(b(Free) - A(Free,Fixed)*phi(Fixed,l+1));
             
         % Plot phi at every timestep
-        set(Solution, 'Vertices', [Points(:,1) Points(:,2) Points(:,3) phi(:,l+1)], 'CData', phi(:,l+1));
+        set(Solution, 'Vertices', [Points(:,1) Points(:,2) Points(:,3)], 'CData', phi(:,l+1));
         title(['t = ' num2str(t(l+1))]);
         drawnow;
     
     end
+    
+    % Plot the maximum temperature
+   figure('WindowStyle', 'docked');
+   plot(t, max(phi), '-');
+    %axis([0,100,300,345]);
+    axis([0,100]);
+    grid on;
+    xlabel('Time [s]');
+    ylabel('Maximum Temperature [K]');
     
 return
 
@@ -92,10 +100,12 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
 	Omega           = zeros(N_e, 1);
     Gamma           = zeros(N_f, 1);
 	M_e             = [2, 1, 1, 1; 
-                       1, 2, 1, 1;
-                       1, 1, 2, 1;
-                       1, 1, 2, 1];
-    K1              = [1; 1; 1; 1]; 
+                            1, 2, 1, 1;
+                            1, 1, 2, 1;
+                            1, 1, 2, 1];
+    k_e             = [2, 1, 1; 
+                            1, 2, 1;
+                            1, 1, 2];                   
     s_e             = [1; 1; 1; 1];
         
     % Calculate face areas
@@ -142,9 +152,8 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
                 n           = Nodes(q);
             	gradEta_q   = [gradEta(1,q), gradEta(2,q), gradEta(3,q)];
                                 
-                M(m,n)      = M(m,n) + M_e(p,q)*rho*C*Omega(e)/20;
-                %K(m,n)      = K(m,n) - dot(v,gradEta_q)/3*Omega(e) - mu*dot(gradEta_p,gradEta_q)*Omega(e);
-                K(m,n)      = K(m,n) - k*dot(gradEta_p,gradEta_q)/36*Omega(e);
+                M(m,n)      = M(m,n) + rho*C*M_e(p,q)*Omega(e)/20;
+                K(m,n)      = K(m,n) - k*dot(gradEta_p,gradEta_q)/36*Omega(e); %- h*k_e(p)*Gamma(e)/12;
                       
             end
             %s(m)            = s(m)   + s_e(p)*Qcpu*Gamma(e)/3 + s_e(p)*h*Tair*Gamma(e)/3;
@@ -160,7 +169,8 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
                 Nodes       = Faces(Boundaries(b).indices(f),:);
                 for p=1:3
                     m     	= Nodes(p);
-                    s(m)	= s(m)      + k*Boundaries(b).value*Gamma(Boundaries(b).indices(f))/3;
+                    s(m)	= s(m)      + s_e(p)*k*Boundaries(b).value*Gamma(Boundaries(b).indices(f))/3;
+                    
                 end
             end        
         elseif strcmp(Boundaries(b).type, 'robin')
@@ -168,19 +178,15 @@ function [M, K, s, phi, Free, Fixed] = assemble(M, K, s, phi, Points, Faces, Ele
                 Nodes       = Faces(Boundaries(b).indices(f),:);
                 for p=1:3
                     m     	= Nodes(p);
-                    s(m)	= s(m)      + h*Tair*Gamma(Boundaries(b).indices(f))/3;
-                    phi(m,:)	= Boundaries(b).value;
-                    
+                    s(m)	= s(m)      + s_e(p)*h*Tair*Gamma(Boundaries(b).indices(f))/3;
+                    for q=1:3
+                        n = Nodes(q);
+                        K(m,n)    = K(m,n)  - h*k_e(p)*Gamma(Boundaries(b).indices(f))/12;
+                    end
                 end
            end
-%             for p=1:Boundaries(b).N
-%                m        = Boundaries(b).indices(p);
-%                phi(m,:)	= Boundaries(b).value;
-%             end
-            Fixed = [Fixed; Boundaries(b).indices'];
         end
-
-        Free            = setdiff(1:N_p, Fixed);
+        Free            = [1:N_p];
     end
     
 
@@ -5212,7 +5218,7 @@ Boundaries(2).name    = 'Base';
 Boundaries(2).type    = 'neumann';
 Boundaries(2).N       = 194;
 Boundaries(2).indices = [ 427 428 429 430 431 432 433 434 435 436 437 438 439 440 441 442 443 444 445 446 447 448 449 450 451 452 453 454 455 456 457 458 459 460 461 462 463 464 465 466 467 468 469 470 471 472 473 474 475 476 477 478 479 480 481 482 483 484 485 486 487 488 489 490 491 492 493 494 495 496 497 498 499 500 501 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 536 537 538 539 540 541 542 543 544 545 546 547 548 549 550 551 552 553 554 555 556 557 558 559 560 561 562 563 564 565 566 567 568 569 570 571 572 573 574 575 576 577 578 579 580 581 582 583 584 585 586 587 588 589 590 591 592 593 594 595 596 597 598 599 600 601 602 603 604 605 606 607 608 609 610 611 612 613 614 615 616 617 618 619 620 ];
-Boundaries(2).value   = 40000.00000;
+Boundaries(2).value   = 0;
 figure('WindowStyle', 'Docked');
 trisurf(Faces(Boundaries(1).indices,:), Points(:,1), Points(:,2), Points(:,3), 'FaceColor', 'r'); hold on;
 trisurf(Faces(Boundaries(2).indices,:), Points(:,1), Points(:,2), Points(:,3), 'FaceColor', 'g'); hold on;

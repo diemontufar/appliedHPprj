@@ -180,11 +180,11 @@ We can then rewrite the system of equations in the form:
 Where $M$ represents the Mass matrix, $K$ the Stiffness Matrix, both have size of $N_p$x$N_p$ and finally the $s$ term that is the load vector with size $N_p$x$1$. For the Heat Equation we can recognize each term of Equation(15) in the Equation (13) as follows:
 
 \begin{equation}
- M_{pq}^e = \int\limits_{\Omega_e} \eta_p\eta_q \rho C d\Omega
+ M_{pq}^e = \int\limits_{\Omega_e} \rho C \eta_p\eta_q  d\Omega
 \end{equation}
 
 \begin{equation}
- K_{pq}^e = -\int\limits_{\Omega_e} k \nabla \eta_p \cdot \nabla \eta_q d\Omega - h \int\limits_{\Gamma_e} \eta_p \eta_q d\Gamma
+ K_{pq}^e = - k \int\limits_{\Omega_e} \nabla \eta_p \cdot \nabla \eta_q d\Omega - h \int\limits_{\Gamma_e} \eta_p \eta_q d\Gamma
 \end{equation}
 
 \begin{equation}
