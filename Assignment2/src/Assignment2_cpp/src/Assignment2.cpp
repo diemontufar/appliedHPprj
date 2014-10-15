@@ -164,49 +164,58 @@ void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Bound
     Points[0]       = new double    [N_p*2];
     Faces[0]        = new int       [N_f*2];
     Elements[0]     = new int       [N_e*3];
-    for(int p=1, pp=2; p<N_p; p++, pp+=2)
-	{
+
+    for(int p=1, pp=2; p<N_p; p++, pp+=2){
 		Points[p] = &Points[0][pp];
 	}
-	for(int f=1, ff=2; f<N_f; f++, ff+=2)
-	{
+
+    cout << "Points OK!"  << endl;
+
+	for(int f=1, ff=2; f<N_f; f++, ff+=2){
 		Faces[f] = &Faces[0][ff];
 	}
-    for(int e=1, ee=3; e<N_e; e++, ee+=3)
-	{
+
+	cout << "Faces OK!"  << endl;
+
+    for(int e=1, ee=3; e<N_e; e++, ee+=3){
 		Elements[e] = &Elements[0][ee];
 	}
     
+    cout << "Elements OK!"  << endl;
+
 	file >> temp;
-	for(int p=0; p<N_p; p++)
-	{
+	for(int p=0; p<N_p; p++){
 		file >> Points[p][0] >> Points[p][1];
 	}
 	
+	cout << "Points2 OK!"  << endl;
+
 	file >> temp;
-	for(int f=0; f<N_f; f++)
-	{
+	for(int f=0; f<N_f; f++){
 		file >> Faces[f][0] >> Faces[f][1];
 	}
 	
+	cout << "Faces2 OK!" << endl;
+
 	file >> temp;
-	for(int e=0; e<N_e; e++)
-	{
+	for(int e=0; e<N_e; e++){
 		file >> Elements[e][0] >> Elements[e][1] >> Elements[e][2];
 	}
 	
+	cout << "Elements2 OK!"  << endl;
+
 	file >> temp;
-	for(int b=0; b<N_b; b++)
-	{
+	for(int b=0; b<N_b; b++){
 		file >> Boundaries[b].name_ >> Boundaries[b].type_ >> Boundaries[b].N_;
         Boundaries[b].indices_  = new int [Boundaries[b].N_];
-        for(int n=0; n<Boundaries[b].N_; n++)
-        {
+        for(int n=0; n<Boundaries[b].N_; n++){
             file >> Boundaries[b].indices_[n];
         }
         file >> Boundaries[b].value_;
 	}
 	
+	cout << "Boundaries OK!"  << endl;
+
 	file.close();
 	
 	cout << "Done.\n" << flush;
