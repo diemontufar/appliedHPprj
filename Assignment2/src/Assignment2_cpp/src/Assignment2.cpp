@@ -20,8 +20,9 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
+#include <iomanip>
 #include <cmath>
-#include <string>
+#include <cstring>
 #include "SparseMatrix.h"
 #include "Boundary.h"
 
@@ -44,6 +45,7 @@ const int		N_t			= static_cast<int> ((t_max-t_min)/Delta_t+1);
 // Function declarations
 void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& N_p, int& N_f, int& N_e, int& N_b);
 void	write(fstream& file, double* phi, int N_p);
+void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l);
 void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int N_p, int N_f, int N_e, int N_b);
 void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed);
 
@@ -96,8 +98,9 @@ int     main(int argc, char** argv)
     // Compute the column vector to subtract from the right hand side to take account of fixed nodes
     A.multiply(AphiFixed, phi, Free, Fixed);
 
-    file.open("Assignment2.data", ios::out);
-    write(file, phi, N_p);
+    //file.open("Assignment2.data", ios::out);
+    //write(file, phi, N_p);
+    writeData(phi, Points, Elements, N_p, N_e, 0);
 
     // Time marching loop
     for(int l=0; l<N_t-1; l++)
@@ -116,10 +119,13 @@ int     main(int argc, char** argv)
         solve(A, phi, b, Free, Fixed);
 
         // Write the solution
-        write(file, phi, N_p);
+    //    write(file, phi, N_p);
+        if (l%10==0){
+           writeData(phi, Points, Elements, N_p, N_e, (l+1));
+        }
     }
 
-    file.close();
+    //file.close();
 
     // Deallocate arrays
     for(int boundary=0; boundary<N_b; boundary++)
@@ -230,6 +236,50 @@ void	write(fstream& file, double* phi, int N_p)
     }
     file << "\n";
     return;
+}
+void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l)
+{	
+	fstream         file;
+    char            fileName[64];
+    
+    sprintf(fileName, "VTKOutput/Tutorial_6_%04d.vtk", l);
+	
+    file.open(fileName, ios::out);
+	
+    file << "# vtk DataFile Version 2.0"<< endl;
+    file << "untitled, Created by me"	<< endl;
+    file << "ASCII"						<< endl;
+    file << "DATASET UNSTRUCTURED_GRID"	<< endl;
+    
+    file << "POINTS " << myN_p << " double" << endl;
+    for(int p=0; p<myN_p; p++)
+    {
+        file << setw(6) << setprecision(5) << fixed << Points[p][0] << "\t" << Points[p][1] << "\t" << Points[p][2] << endl;
+    }
+    
+    file << "CELLS " << myN_e << " " << 5*myN_e << endl;
+    for(int e=0; e<myN_e; e++)
+    {
+        file << "4\t" << Elements[e][0] << "\t" << Elements[e][1] << "\t" << Elements[e][2] <<  "\t" << Elements[e][3] << endl;
+    }
+    
+    file << "CELL_TYPES " << myN_e << endl;
+    for(int e=0; e<myN_e; e++)
+    {
+        file << "10" << endl;
+    }
+	
+    file << "POINT_DATA " << myN_p << endl;
+    file << "SCALARS phi double 1" << endl;
+    file << "LOOKUP_TABLE \"default\"" << endl;
+    for(int p=0; p<myN_p; p++)
+    {
+        file << setprecision(5) << phi[p] << endl;
+    }
+	
+    file.close();
+	
+	return;
 }
 
 void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int N_p, int N_f, int N_e, int N_b)
@@ -373,7 +423,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
 					 {
 						 Nodes[q]	= Faces[Boundaries[b].indices_[f]][q];
 						 n = Nodes[q];
-						 //K(m,n)    -= h*k_e[p][q]*Gamma[Boundaries[b].indices_[f]]/12; //Contribution to the stiffness matrix
+						 K(m,n)    -= h*k_e[p][q]*Gamma[Boundaries[b].indices_[f]]/12; //Contribution to the stiffness matrix
 					 }
 
 				}
