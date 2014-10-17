@@ -140,7 +140,7 @@ int     main(int argc, char** argv)
     delete [] Fixed;
     delete [] AphiFixed;
 
-    return 0;
+    return 1;
 }
 
 void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& N_p, int& N_f, int& N_e, int& N_b)
@@ -188,7 +188,7 @@ void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Bound
     file >> temp;
     for(int p=0; p<N_p; p++)
     {
-        file >> Points[p][0] >> Points[p][1] >> Points[p][1];
+        file >> Points[p][0] >> Points[p][1] >> Points[p][2];
     }
 
     file >> temp;
@@ -236,9 +236,9 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
 {
     cout << "Assembling system... " << flush;
 
-    double	x[3];
-    double	y[3];
-    double	z[3]; //Added
+    double	x[4];
+    double	y[4];
+    double	z[4]; //Added
     double	gradEta[3][4]; //Resized
     double	gradEta_p[3]= {0.0, 0.0, 0.0}; //Resized
     double	gradEta_q[3]= {0.0, 0.0, 0.0}; //Resized
@@ -268,28 +268,28 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
             y[p]	= Points[Faces[f][p]][1];
             z[p]	= Points[Faces[f][p]][2];
         }
-        Gamma[f]	= sqrt(pow(((y[2]-y[1])*(z[3]-z[1]) - (z[2]-z[1])*(y[3]-y[1])),2)
-        					+ pow(((z[2]-z[1])*(x[3]-x[1]) - (x[2]-x[1])*(z[3]-z[1])),2)
-        					+ pow(((x[2]-x[1])*(y[3]-y[1]) - (y[2]-y[1])*(x[3]-x[1])),2))/2;
+        Gamma[f]	= sqrt(pow(((y[1]-y[0])*(z[2]-z[0]) - (z[1]-z[0])*(y[2]-y[0])),2)
+        					+ pow(((z[1]-z[0])*(x[2]-x[0]) - (x[1]-x[0])*(z[2]-z[0])),2)
+        					+ pow(((x[1]-x[0])*(y[2]-y[0]) - (y[1]-y[0])*(x[2]-x[0])),2))/2;
     }
 
     // Calculate element volumes (Resized)
     for(int e=0; e<N_e; e++)
     {
-        for(int p=0; p<3; p++)
+        for(int p=0; p<4; p++)
         {
             x[p]	= Points[Elements[e][p]][0];
             y[p]	= Points[Elements[e][p]][1];
             z[p]	= Points[Elements[e][p]][2];
         }
-        Omega[e]    = abs(x[1]*y[2]*z[3] - x[1]*y[3]*z[2] - x[2]*y[1]*z[3]
-					 + x[2]*y[3]*z[1] + x[3]*y[1]*z[2] - x[3]*y[2]*z[1]
-					 - x[1]*y[2]*z[4] + x[1]*y[4]*z[2] + x[2]*y[1]*z[4]
-					 - x[2]*y[4]*z[1] - x[4]*y[1]*z[2] + x[4]*y[2]*z[1]
-					 + x[1]*y[3]*z[4] - x[1]*y[4]*z[3] - x[3]*y[1]*z[4]
-					 + x[3]*y[4]*z[1] + x[4]*y[1]*z[3] - x[4]*y[3]*z[1]
-					 - x[2]*y[3]*z[4] + x[2]*y[4]*z[3] + x[3]*y[2]*z[4]
-					 - x[3]*y[4]*z[2] - x[4]*y[2]*z[3] + x[4]*y[3]*z[2]) /6;
+        Omega[e]    = abs(x[0]*y[1]*z[2] - x[0]*y[2]*z[1] - x[1]*y[0]*z[2]
+					 + x[1]*y[2]*z[0] + x[2]*y[0]*z[1] - x[2]*y[1]*z[0]
+					 - x[0]*y[1]*z[3] + x[0]*y[3]*z[1] + x[1]*y[0]*z[3]
+					 - x[1]*y[3]*z[0] - x[3]*y[0]*z[1] + x[3]*y[1]*z[0]
+					 + x[0]*y[2]*z[3] - x[0]*y[3]*z[2] - x[2]*y[0]*z[3]
+					 + x[2]*y[3]*z[0] + x[3]*y[0]*z[2] - x[3]*y[2]*z[0]
+					 - x[1]*y[2]*z[3] + x[1]*y[3]*z[2] + x[2]*y[1]*z[3]
+					 - x[2]*y[3]*z[1] - x[3]*y[1]*z[2] + x[3]*y[2]*z[1]) /6;
     }
 
     // Assemble M, K, and s
@@ -306,20 +306,20 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
             z[p]	= Points[Nodes[p]][2]; //Resized
         }
 
-        gradEta[0][0] = ((y[4]-y[2])*(z[3]-z[2])-(y[3]-y[2])*(z[4]-z[2]))/(6*Omega[e]);
-		gradEta[0][1] = ((y[3]-y[1])*(z[4]-z[3])-(y[3]-y[4])*(z[1]-z[3]))/(6*Omega[e]);
-		gradEta[0][2] = ((y[2]-y[4])*(z[1]-z[4])-(y[1]-y[4])*(z[2]-z[4]))/(6*Omega[e]);
-		gradEta[0][2] = ((y[1]-y[3])*(z[2]-z[1])-(y[1]-y[2])*(z[3]-z[1]))/(6*Omega[e]);
+        gradEta[0][0] = ((y[3]-y[1])*(z[2]-z[1])-(y[2]-y[1])*(z[3]-z[1]))/(6*Omega[e]);
+		gradEta[0][1] = ((y[2]-y[0])*(z[3]-z[2])-(y[2]-y[3])*(z[0]-z[2]))/(6*Omega[e]);
+		gradEta[0][2] = ((y[1]-y[3])*(z[0]-z[3])-(y[0]-y[3])*(z[1]-z[3]))/(6*Omega[e]);
+		gradEta[0][3] = ((y[0]-y[2])*(z[1]-z[0])-(y[0]-y[1])*(z[2]-z[0]))/(6*Omega[e]);
 
-		gradEta[1][0] = ((x[3]-x[2])*(z[4]-z[2])-(x[4]-x[2])*(z[3]-z[2]))/(6*Omega[e]);
-		gradEta[1][1] = ((x[4]-x[3])*(z[3]-z[1])-(x[1]-x[3])*(z[3]-z[4]))/(6*Omega[e]);
-		gradEta[1][2] = ((x[1]-x[4])*(z[2]-z[4])-(x[2]-x[4])*(z[1]-z[4]))/(6*Omega[e]);
-		gradEta[0][2] = ((x[2]-x[1])*(z[1]-z[3])-(x[3]-x[1])*(z[1]-z[2]))/(6*Omega[e]);
+		gradEta[1][0] = ((x[2]-x[1])*(z[3]-z[1])-(x[3]-x[1])*(z[2]-z[1]))/(6*Omega[e]);
+		gradEta[1][1] = ((x[3]-x[2])*(z[2]-z[0])-(x[0]-x[2])*(z[2]-z[3]))/(6*Omega[e]);
+		gradEta[1][2] = ((x[0]-x[3])*(z[1]-z[3])-(x[1]-x[3])*(z[0]-z[3]))/(6*Omega[e]);
+		gradEta[1][3] = ((x[1]-x[0])*(z[0]-z[2])-(x[2]-x[0])*(z[0]-z[1]))/(6*Omega[e]);
 
-		gradEta[2][0] = ((x[4]-x[2])*(y[3]-y[2])-(x[3]-x[2])*(y[4]-y[2]))/(6*Omega[e]);
-		gradEta[2][1] = ((x[3]-x[1])*(y[4]-y[3])-(x[3]-x[4])*(y[1]-y[3]))/(6*Omega[e]);
-		gradEta[2][2] = ((x[2]-x[4])*(y[1]-y[4])-(x[1]-x[4])*(y[2]-y[4]))/(6*Omega[e]);
-		gradEta[0][2] = ((x[1]-x[3])*(y[2]-y[1])-(x[1]-x[2])*(y[3]-y[1]))/(6*Omega[e]);
+		gradEta[2][0] = ((x[3]-x[1])*(y[2]-y[1])-(x[2]-x[1])*(y[3]-y[1]))/(6*Omega[e]);
+		gradEta[2][1] = ((x[2]-x[0])*(y[3]-y[2])-(x[2]-x[3])*(y[0]-y[2]))/(6*Omega[e]);
+		gradEta[2][2] = ((x[1]-x[3])*(y[0]-y[3])-(x[0]-x[3])*(y[1]-y[3]))/(6*Omega[e]);
+		gradEta[2][3] = ((x[0]-x[2])*(y[1]-y[0])-(x[0]-x[1])*(y[2]-y[0]))/(6*Omega[e]);
 
         // Outer loop over each node
         for(int p=0; p<4; p++)
@@ -373,7 +373,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
 					 {
 						 Nodes[q]	= Faces[Boundaries[b].indices_[f]][q];
 						 n = Nodes[q];
-						 K(m,n)    -= h*k_e[p][q]*Gamma[Boundaries[b].indices_[f]]/12; //Contribution to the stiffness matrix
+						 //K(m,n)    -= h*k_e[p][q]*Gamma[Boundaries[b].indices_[f]]/12; //Contribution to the stiffness matrix
 					 }
 
 				}
