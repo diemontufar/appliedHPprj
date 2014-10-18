@@ -214,9 +214,9 @@ void read(char* filename, double**& Points, int**& Faces, int**& Elements, Bound
 	Faces			= new int*		[myN_f];
 	Elements		= new int*		[myN_e];
 	Boundaries		= new Boundary  [myN_b];
-    Points[0]       = new double    [myN_p*2];
-    Faces[0]        = new int       [myN_f*2];
-    Elements[0]     = new int       [myN_e*3];
+    Points[0]       = new double    [myN_p*3];
+    Faces[0]        = new int       [myN_f*3];
+    Elements[0]     = new int       [myN_e*4];
 	myPoints		= new bool		[myN_p];
     for(int p=1, pp=3; p<myN_p; p++, pp+=3)
     {
