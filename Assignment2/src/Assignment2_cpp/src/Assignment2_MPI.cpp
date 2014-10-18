@@ -11,9 +11,9 @@
 // Method:		Finite Element Method with linear 2D triangular elements
 //				and Implicit Euler Method and Conjugate Gradient Method
 //
-// Compilation:	g++ Assignment2.cpp -o Assignment2
+// Compilation:	mpicxx Assignment2_MPI.cpp -o Assignment2_MPI.exe
 //
-// Execution:	./Assignment2 Box.grid
+// Execution:	./Assignment2_MPI /grids/box/Box.grid
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -23,15 +23,16 @@
 #include <iomanip>
 #include <cmath>
 #include <cstring>
+#include <mpi.h>
 #include "SparseMatrix.h"
 #include "Boundary.h"
 
 using namespace std;
 
 // Global variables
-const double	t_min		= 0.00;
-const double	t_max		= 100.00;
-const double    Delta_t		= 0.1;
+const double	t_min	    = 0.00;
+const double	t_max	    = 100.00;
+const double    Delta_t	    = 0.1;
 
 const double rho            = 8954.00;
 const double C              = 380.00;
@@ -40,14 +41,18 @@ const double h              = 100.00;
 const double Tair           = 300.00;
 const double Qcpu           = 40000.00;
 
-const int		N_t			= static_cast<int> ((t_max-t_min)/Delta_t+1);
+const int    N_t	    = static_cast<int> ((t_max-t_min)/Delta_t+1);
+double*	     buffer	    = NULL; //Added
+int	     bufferSize	    = 0; //Added
 
 // Function declarations
-void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& N_p, int& N_f, int& N_e, int& N_b);
-void	write(fstream& file, double* phi, int N_p);
+void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& myN_p, int& myN_f, int& myN_e, int& myN_b, bool*& myPoints, int myID); //Changed
+void	write(fstream& file, double* phi, int myN_p);
 void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l);
-void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int N_p, int N_f, int N_e, int N_b);
-void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed);
+void	exchange(double* v, Boundary* Boundaries, int myN_b);
+void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int myN_p, int myN_f, int myN_e, int myN_b, int myID); //Changed
+void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Boundary* Boundaries, bool* myPoints, int myN_b, int myID); //Changed
+double	innerProduct(double* v1, double* v2, bool* Free, bool* myPoints, int N_row); //Added
 
 int     main(int argc, char** argv)
 {
@@ -56,79 +61,109 @@ int     main(int argc, char** argv)
     int**			Faces		= NULL;
     int**			Elements	= NULL;
     Boundary*		Boundaries	= NULL;
-    int				N_p			= 0;
-    int				N_f			= 0;
-    int				N_e			= 0;
-    int				N_b			= 0;
-    double			t			= 0;
+    bool*			myPoints	= NULL; //Added
+    int				myN_p		= 0; //Changed
+    int				myN_f		= 0; //Changed
+    int				myN_e		= 0; //Changed
+    int				myN_b		= 0; //Changed
+    int				myID		= 0; //Added
+    int				N_Procs		= 0; //Added
+    //double			t			= 0; //Removed
     fstream         file;
+	char			myFileName[64]; //Added
+	double			wtime; //Added
 
-    if(argc<2)
-    {
-        cerr << "No grid file specified" << endl;
-        exit(1);
-    }
-    else
-    {
-        read(argv[1], Points, Faces, Elements, Boundaries, N_p, N_f, N_e, N_b);
-    }
+	MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD,	&myID);
+	MPI_Comm_size(MPI_COMM_WORLD,	&N_Procs);
+
+	if(argc<2){
+		if(myID==0)	{
+			cerr << "No grid file specified" << endl;
+		}
+		MPI_Abort(MPI_COMM_WORLD, 1);
+	}else{
+		read(argv[1], Points, Faces, Elements, Boundaries, myN_p, myN_f, myN_e, myN_b, myPoints, myID);
+	}
     // Allocate arrays
-    double*			phi			= new double[N_p];
-    double*			s			= new double[N_p];
-    double*			b			= new double[N_p];
-    bool*			Free        = new bool	[N_p];
-    bool*			Fixed       = new bool	[N_p];
-    double*			AphiFixed	= new double[N_p];
+    double*			phi			= new double[myN_p];
+    double*			s			= new double[myN_p];
+    double*			b			= new double[myN_p];
+    bool*			Free        = new bool	[myN_p];
+    bool*			Fixed       = new bool	[myN_p];
+    double*			AphiFixed	= new double[myN_p];
     SparseMatrix	M;
     SparseMatrix	K;
     SparseMatrix	A;
 
     // Set initial condition
-    t			= t_min;
-    for(int m=0; m<N_p; m++)
+    //t			= t_min;
+
+    if(myID==0)
+	{
+		wtime	= MPI_Wtime(); //Added
+	}
+
+    for(int m=0; m<myN_p; m++)
     {
         phi[m]	= 300;
     }
 
-    assemble(M, K, s, phi, Free, Fixed, Points, Faces, Elements, Boundaries, N_p, N_f, N_e, N_b);
+    assemble(M, K, s, phi, Free, Fixed, Points, Faces, Elements, Boundaries, myN_p, myN_f, myN_e, myN_b, myID); //Changed
 
     A = M;
     A.subtract(Delta_t, K); // At this point we have A = M-Delta_t*K
 
     // Compute the column vector to subtract from the right hand side to take account of fixed nodes
     A.multiply(AphiFixed, phi, Free, Fixed);
+    exchange(AphiFixed, Boundaries, myN_b); //Added
+    exchange(s, Boundaries, myN_b); //Added
 
-    //file.open("Assignment2.data", ios::out);
-    //write(file, phi, N_p);
-    writeData(phi, Points, Elements, N_p, N_e, 0);
+    sprintf(myFileName, "Assignment2_MPI_4.data%d", myID);
+    file.open(myFileName, ios::out);
+    write(file, phi, myN_p);
+    //writeData(phi, Points, Elements, N_p, N_e, 0);
 
     // Time marching loop
     for(int l=0; l<N_t-1; l++)
     {
-        t	+= Delta_t;
-        cout << "t = " << t;
+        //t	+= Delta_t;
+        //cout << "t = " << t;
+
+    	if(myID==0)	{
+			cout << "t = " << l*Delta_t;
+		}
 
         // Assemble b
-        M.multiply(b, phi);
-        for(int m=0; m<N_p; m++)
+        M.multiply(b, phi); // b = M*phi^l
+        exchange(b, Boundaries, myN_b);
+        for(int m=0; m<myN_p; m++)
         {
             b[m]	+= Delta_t*s[m] - AphiFixed[m];
-        }
+        } // b = M*phi^l + Delta_t*s - A_free,fixed*phi_fixed
 
         // Solve the linear system
-        solve(A, phi, b, Free, Fixed);
+        solve(A, phi, b, Free, Fixed, Boundaries, myPoints, myN_b, myID);//Changed
 
         // Write the solution
-    //    write(file, phi, N_p);
-        if (l%10==0){
-           writeData(phi, Points, Elements, N_p, N_e, (l+1));
-        }
+        write(file, phi, myN_p);
+        //if (l%10==0){
+          // writeData(phi, Points, Elements, N_p, N_e, (l+1));
+        //}
     }
 
-    //file.close();
+    file.close();
+
+    if(myID==0)
+	{
+		wtime	= MPI_Wtime() - wtime;	// Record the end time and calculate elapsed time
+		cout << "Simulation took " << wtime << " seconds with " << N_Procs << " processes" << endl;
+	} //Added
+
+    MPI_Buffer_detach(&buffer, &bufferSize); //Added
 
     // Deallocate arrays
-    for(int boundary=0; boundary<N_b; boundary++)
+    for(int boundary=0; boundary<myN_b; boundary++)
     {
         delete [] Boundaries[boundary].indices_;
     }
@@ -145,72 +180,78 @@ int     main(int argc, char** argv)
     delete [] Free;
     delete [] Fixed;
     delete [] AphiFixed;
+    delete [] buffer;
 
-    return 1;
+    MPI_Finalize();
+
+    return 0;
 }
 
-void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& N_p, int& N_f, int& N_e, int& N_b)
+void read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& myN_p, int& myN_f, int& myN_e, int& myN_b, bool*& myPoints, int myID)
 {
     fstream		file;
     string      temp;
+    char		myFileName[64]; //Added
+    int			myMaxN_sp	= 0;//Added
+    int			myMaxN_sb	= 0;//Added
+    int			maxN_sp		= 0;//Added
+    int			yourID		= 0;//Added
 
-    cout << "Reading " << filename << "... " << flush;
+    if(myID==0)
+	{
+		cout << "Reading " << filename << "'s... " << flush;
+	}
 
-    file.open(filename);
-    if(!file.is_open())
-    {
-        cerr << "Error openfing file" << endl;
-        exit(1);
-    }
+    sprintf(myFileName, "%s%d", filename, myID);
+    file.open(myFileName);
 
-    file >> temp >> N_p;
-    file >> temp >> N_f;
-    file >> temp >> N_e;
-    file >> temp >> N_b;
+    file >> temp >> myN_p;
+	file >> temp >> myN_f;
+	file >> temp >> myN_e;
+	file >> temp >> myN_b;
 
-    Points			= new double*	[N_p];
-    Faces			= new int*		[N_f];
-    Elements		= new int*		[N_e];
-    Boundaries		= new Boundary  [N_b];
-    Points[0]       = new double    [N_p*3];
-    Faces[0]        = new int       [N_f*3];
-    Elements[0]     = new int       [N_e*4];
-
-    for(int p=1, pp=3; p<N_p; p++, pp+=3)
+	Points			= new double*	[myN_p];
+	Faces			= new int*		[myN_f];
+	Elements		= new int*		[myN_e];
+	Boundaries		= new Boundary  [myN_b];
+    Points[0]       = new double    [myN_p*2];
+    Faces[0]        = new int       [myN_f*2];
+    Elements[0]     = new int       [myN_e*3];
+	myPoints		= new bool		[myN_p];
+    for(int p=1, pp=3; p<myN_p; p++, pp+=3)
     {
         Points[p] = &Points[0][pp];
     }
-
-    for(int f=1, ff=3; f<N_f; f++, ff+=3)
+    for(int f=1, ff=3; f<myN_f; f++, ff+=3)
     {
         Faces[f] = &Faces[0][ff];
     }
-
-    for(int e=1, ee=4; e<N_e; e++, ee+=4)
+    for(int e=1, ee=4; e<myN_e; e++, ee+=4)
     {
         Elements[e] = &Elements[0][ee];
     }
+    memset(myPoints, false, myN_p*sizeof(bool)); //Added
 
     file >> temp;
-    for(int p=0; p<N_p; p++)
+    for(int p=0; p<myN_p; p++)
     {
         file >> Points[p][0] >> Points[p][1] >> Points[p][2];
     }
 
     file >> temp;
-    for(int f=0; f<N_f; f++)
+    for(int f=0; f<myN_f; f++)
     {
         file >> Faces[f][0] >> Faces[f][1] >> Faces[f][2];
     }
 
     file >> temp;
-    for(int e=0; e<N_e; e++)
+    for(int e=0; e<myN_e; e++)
     {
         file >> Elements[e][0] >> Elements[e][1] >> Elements[e][2] >> Elements[e][3]; //Change it! added: Elements[e][3]
     }
 
     file >> temp;
-    for(int b=0; b<N_b; b++)
+    for(int b=0; b<myN_b; b++)
     {
         file >> Boundaries[b].name_ >> Boundaries[b].type_ >> Boundaries[b].N_;
         Boundaries[b].indices_  = new int [Boundaries[b].N_];
@@ -219,23 +260,43 @@ void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Bound
             file >> Boundaries[b].indices_[n];
         }
         file >> Boundaries[b].value_;
+        if(Boundaries[b].type_=="interprocess") //Added
+		{
+			myMaxN_sb++;
+			myMaxN_sp	= max(myMaxN_sp, Boundaries[b].N_);
+			yourID		= static_cast<int> (Boundaries[b].value_);
+			if(myID>yourID)
+			{
+				for(int p=0; p<Boundaries[b].N_; p++)
+				{
+					myPoints[Boundaries[b].indices_[p]]	= true;
+				}
+			}
+		}
     }
+
+    MPI_Allreduce(&myMaxN_sp, &maxN_sp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+	buffer		= new double [maxN_sp];
+	bufferSize	= (maxN_sp*sizeof(double)+MPI_BSEND_OVERHEAD)*myMaxN_sb;
+	MPI_Buffer_attach(new char[bufferSize] , bufferSize);
 
     file.close();
 
-    cout << "Done.\n" << flush;
-
-    return;
+    if(myID==0)
+	{
+		cout << "Done.\n" << flush;
+	}
+	return;
 }
 
-void	write(fstream& file, double* phi, int N_p)
+void	write(fstream& file, double* phi, int myN_p)
 {
-    for(int m=0; m<N_p; m++)
-    {
-        file << phi[m] << "\t";
-    }
-    file << "\n";
-    return;
+	for(int m=0; m<myN_p; m++)
+	{
+		file << phi[m] << "\t";
+	}
+	file << "\n";
+	return;
 }
 
 void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l)
@@ -243,7 +304,7 @@ void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& 
 	fstream         file;
     char            fileName[64];
     
-    sprintf(fileName, "VTKOutput/Tutorial_6_%04d.vtk", l);
+    sprintf(fileName, "VTKOutput/mpi/Assignment2_MPI_%04d.vtk", l);
 	
     file.open(fileName, ios::out);
 	
@@ -283,9 +344,47 @@ void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& 
 	return;
 }
 
-void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int N_p, int N_f, int N_e, int N_b)
+void	exchange(double* v, Boundary* Boundaries, int myN_b) //Added
 {
-    cout << "Assembling system... " << flush;
+	int			yourID		= 0;
+	int			tag			= 0;
+	MPI_Status	status;
+
+	for(int b=0; b<myN_b; b++)
+	{
+		if(Boundaries[b].type_=="interprocess")
+		{
+			for(int p=0; p<Boundaries[b].N_; p++)
+			{
+				buffer[p]	= v[Boundaries[b].indices_[p]];
+			}
+			yourID		= static_cast<int> (Boundaries[b].value_);
+			MPI_Bsend(buffer, Boundaries[b].N_,	MPI_DOUBLE,	yourID,	tag, MPI_COMM_WORLD);
+		}
+	}
+	for(int b=0; b<myN_b; b++)
+	{
+		if(Boundaries[b].type_=="interprocess")
+		{
+			yourID	= static_cast<int> (Boundaries[b].value_);
+			MPI_Recv(buffer, Boundaries[b].N_,	MPI_DOUBLE,	yourID,	tag, MPI_COMM_WORLD, &status);
+			for(int p=0; p<Boundaries[b].N_; p++)
+			{
+				v[Boundaries[b].indices_[p]] += buffer[p];
+			}
+		}
+	}
+
+	return;
+}
+
+
+void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int myN_p, int myN_f, int myN_e, int myN_b, int myID)
+{
+	if(myID==0)
+	{
+		cout << "Assembling system... " << flush;
+	}
 
     double	x[4];
     double	y[4];
@@ -297,13 +396,13 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
     double	k_e[3][3]	= {{2.0, 1.0, 1.0}, {1.0, 2.0, 1.0}, {1.0, 1.0, 2.0}}; //Added
     double	s_e[4]		= {1.0, 1.0, 1.0, 1.0}; //Resized
     int		Nodes[4]	= {0, 0, 0, 0}; //Resized
-    double* Omega		= new double [N_e];
-    double* Gamma		= new double [N_f];
+    double* Omega		= new double [myN_e];
+    double* Gamma		= new double [myN_f];
     int		m;
     int		n;
 
     // Assign all the indices to be free initially
-    for(int p=0; p<N_p; p++)
+    for(int p=0; p<myN_p; p++)
     {
         Free[p] = 1;
         Fixed[p]= 0;
@@ -311,7 +410,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
     }
 
     // Calculate face areas (Resized)
-    for(int f=0; f<N_f; f++)
+    for(int f=0; f<myN_f; f++)
     {
         for(int p=0; p<3; p++)
         {
@@ -325,7 +424,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
     }
 
     // Calculate element volumes (Resized)
-    for(int e=0; e<N_e; e++)
+    for(int e=0; e<myN_e; e++)
     {
         for(int p=0; p<4; p++)
         {
@@ -344,10 +443,10 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
     }
 
     // Assemble M, K, and s
-    M.initialize(N_p, 10);
-    K.initialize(N_p, 10);
+    M.initialize(myN_p, 10);
+    K.initialize(myN_p, 10);
 
-    for(int e=0; e<N_e; e++)
+    for(int e=0; e<myN_e; e++)
     {
         for(int p=0; p<4; p++)
         {
@@ -396,7 +495,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
     }
 
     // Apply boundary conditions
-    for(int b=0; b<N_b; b++)
+    for(int b=0; b<myN_b; b++)
     {
         if		(Boundaries[b].type_=="neumann")
         {
@@ -440,12 +539,17 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
     delete [] Gamma;
     delete [] Omega;
 
-    cout << "Done.\n" << flush;
+    MPI_Barrier(MPI_COMM_WORLD);
+
+	if(myID==0)
+	{
+		cout << "Done.\n" << flush;
+	}
 
     return;
 }
 
-void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
+void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Boundary* Boundaries, bool* myPoints, int myN_b, int myID)
 {
     int		N_row			= A.getNrow();
     double*	r_old			= new double [N_row];
@@ -472,30 +576,34 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
 
     // Compute the initial residual
     A.multiply(Aphi, phi, Free, Free);
+    exchange(Aphi, Boundaries, myN_b); //Added
     for(m=0; m<N_row; m++)
     {
         if(Free[m])
         {
             r_old[m]	= b[m] - Aphi[m];
             d[m]		= r_old[m];
-            r_oldTr_old+= r_old[m]*r_old[m];
+            //r_oldTr_old+= r_old[m]*r_old[m]; //Removed
         }
     }
+    r_oldTr_old	= innerProduct(r_old, r_old, Free, myPoints, N_row); //Added
     r_norm = sqrt(r_oldTr_old);
 
     // Conjugate Gradient iterative loop
     while(r_norm>tolerance && k<N_k)
     {
-        dTAd	= 0.0;
-        A.multiply(Ad, d, Free, Free);
+    	A.multiply(Ad, d, Free, Free); //Added
+    	exchange(Ad, Boundaries, myN_b); //Added
+    	dTAd	= innerProduct(d, Ad, Free, myPoints, N_row); //Changed
+    	alpha  	= r_oldTr_old/dTAd; //Added
         for(m=0; m<N_row; m++)
         {
             if(Free[m])
             {
-                dTAd   += d[m]*Ad[m];
+            	phi[m] += alpha*d[m]; //Changed from dTAd   += d[m]*Ad[m];
             }
         }
-        alpha  	= r_oldTr_old/dTAd;
+        //alpha  	= r_oldTr_old/dTAd; Removed
         for(m=0; m<N_row; m++)
         {
             if(Free[m])
@@ -510,20 +618,21 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
                 r[m]	= r_old[m] - alpha*Ad[m];
             }
         }
-        rTr	= 0.0;
+        rTr	= innerProduct(r, r, Free, myPoints, N_row); //Changed
+        beta  	= rTr/r_oldTr_old; //Added
         for(m=0; m<N_row; m++)
         {
             if(Free[m])
             {
-                rTr  += r[m]*r[m];
+            	d[m] = r[m] + beta*d[m];
             }
         }
-        beta  	= rTr/r_oldTr_old;
+        //beta  	= rTr/r_oldTr_old; Removed
         for(m=0; m<N_row; m++)
         {
             if(Free[m])
             {
-                d[m] = r[m] + beta*d[m];
+            	r_old[m] = r[m];
             }
         }
         for(m=0; m<N_row; m++)
@@ -538,7 +647,10 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
         k++;
     }
 
-    cout << ", k = " << k << ", r_norm = " << r_norm << endl;
+    if(myID==0)
+	{
+		cout << ", k = " << k << ", r_norm = " << r_norm << endl;
+	}
 
     delete [] r_old;
     delete [] r;
@@ -549,7 +661,23 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
     return;
 }
 
+double	innerProduct(double* v1, double* v2, bool* Free, bool* myPoints, int N_row)
+{
+	double		myv1Tv2	= 0.0;
+	double		v1Tv2	= 0.0;
 
+	for(int m=0; m<N_row; m++)
+	{
+		if(Free[m] && myPoints[m])
+		{
+			myv1Tv2 += v1[m]*v2[m];
+		}
+	}
+
+	MPI_Allreduce(&myv1Tv2, &v1Tv2, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	return v1Tv2;
+}
 
 
 

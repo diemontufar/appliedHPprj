@@ -52,7 +52,7 @@ public:
 		memset(val_,  0, N_allocated_ *sizeof(double));
 		memset(col_,  -1, N_allocated_*sizeof(int));
 		memset(row_,  0, (N_row_+1)   *sizeof(int));
-		memset(nnzs_, 0, (N_row_+1)   *sizeof(int));
+		memset(nnzs_, 0, (N_row_)   *sizeof(int));
 
 		for(int k=0, kk=0; k<N_row_; k++, kk+=N_nz_rowmax_)
 		{

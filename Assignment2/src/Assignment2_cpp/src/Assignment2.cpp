@@ -243,7 +243,7 @@ void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& 
 	fstream         file;
     char            fileName[64];
     
-    sprintf(fileName, "VTKOutput/Tutorial_6_%04d.vtk", l);
+    sprintf(fileName, "VTKOutput/sequential/Assignment2_%04d.vtk", l);
 	
     file.open(fileName, ios::out);
 	
