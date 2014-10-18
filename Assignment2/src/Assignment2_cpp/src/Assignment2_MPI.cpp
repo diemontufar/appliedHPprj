@@ -48,7 +48,7 @@ int	     bufferSize	    = 0; //Added
 // Function declarations
 void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& myN_p, int& myN_f, int& myN_e, int& myN_b, bool*& myPoints, int myID); //Changed
 void	write(fstream& file, double* phi, int myN_p);
-void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l);
+void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l, int myID);
 void	exchange(double* v, Boundary* Boundaries, int myN_b);
 void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Free, bool* Fixed, double** Points, int** Faces, int** Elements, Boundary* Boundaries, int myN_p, int myN_f, int myN_e, int myN_b, int myID); //Changed
 void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Boundary* Boundaries, bool* myPoints, int myN_b, int myID); //Changed
@@ -119,10 +119,10 @@ int     main(int argc, char** argv)
     exchange(AphiFixed, Boundaries, myN_b); //Added
     exchange(s, Boundaries, myN_b); //Added
 
-    sprintf(myFileName, "Assignment2_MPI_4.data%d", myID);
-    file.open(myFileName, ios::out);
-    write(file, phi, myN_p);
-    //writeData(phi, Points, Elements, N_p, N_e, 0);
+//    sprintf(myFileName, "Assignment2_MPI_4.data%d", myID);
+  //  file.open(myFileName, ios::out);
+    //write(file, phi, myN_p);
+    writeData(phi, Points, Elements, myN_p, myN_e, 0, myID);
 
     // Time marching loop
     for(int l=0; l<N_t-1; l++)
@@ -146,10 +146,10 @@ int     main(int argc, char** argv)
         solve(A, phi, b, Free, Fixed, Boundaries, myPoints, myN_b, myID);//Changed
 
         // Write the solution
-        write(file, phi, myN_p);
-        //if (l%10==0){
-          // writeData(phi, Points, Elements, N_p, N_e, (l+1));
-        //}
+        //write(file, phi, myN_p);
+        if (l%10==0){
+          writeData(phi, Points, Elements, myN_p, myN_e, (l+1), myID);
+        }
     }
 
     file.close();
@@ -299,13 +299,12 @@ void	write(fstream& file, double* phi, int myN_p)
 	return;
 }
 
-void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l)
+void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l, int myID)
 {	
 	fstream         file;
     char            fileName[64];
     
-    sprintf(fileName, "VTKOutput/mpi/Assignment2_MPI_%04d.vtk", l);
-	
+    sprintf(fileName, "VTKOutput/Tutorial_6_%02d_%04d.vtk", myID, l);	
     file.open(fileName, ios::out);
 	
     file << "# vtk DataFile Version 2.0"<< endl;
