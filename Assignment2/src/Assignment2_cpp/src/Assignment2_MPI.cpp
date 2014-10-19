@@ -32,7 +32,7 @@ using namespace std;
 // Global variables
 const double t_min 	= 0.00;
 const double t_max 	= 100.00;
-const double Delta_t 	= 0.1;
+const double Delta_t 	= 0.01;
 
 const double rho 		= 8954.00;
 const double C 		= 380.00;
@@ -161,7 +161,6 @@ int     main(int argc, char** argv)
         delete [] Boundaries[boundary].indices_;
     }
     delete [] Points[0];
-    delete [] Points[0];
     delete [] Points;
     delete [] Faces[0];
     delete [] Faces;
@@ -283,20 +282,10 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
 	return;
 }
 
-void	writeData(fstream& file, double* phi, int myN_p)
-{
-	for(int m=0; m<myN_p; m++)
-	{
-		file << phi[m] << "\t";
-	}
-	file << "\n";
-	return;
-}
-
 void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& myN_e, int l, int myID)
 {	
 	fstream         file;
-    char            fileName[64];
+    char            fileName[128];
     
     sprintf(fileName, "VTKOutput/mpi/Assignment2_MPI_%02d_%04d.vtk", myID, l);
 
