@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <cmath>
 #include <cstring>
+#include <omp.h>
 #include <mpi.h>
 #include "SparseMatrix.h"
 #include "Boundary.h"
@@ -32,7 +33,7 @@ using namespace std;
 // Global variables
 const double t_min 	= 0.00;
 const double t_max 	= 100.00;
-const double Delta_t 	= 0.01;
+const double Delta_t 	= 0.1;
 
 const double rho 		= 8954.00;
 const double C 		= 380.00;
@@ -69,6 +70,8 @@ int     main(int argc, char** argv)
     int				myID		= 0; //Added
     int				N_Procs		= 0; //Added
 	double			wtime; //Added
+    int			N_Threads	= omp_get_max_threads();
+
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD,	&myID);
@@ -132,6 +135,7 @@ int     main(int argc, char** argv)
         // Assemble b
         M.multiply(b, phi); // b = M*phi^l
         exchangeData(b, Boundaries, myN_b);
+        #pragma omp parallel for default(none) shared(myN_p,b,s,AphiFixed)
         for(int m=0; m<myN_p; m++)
         {
             b[m]	+= Delta_t*s[m] - AphiFixed[m];
@@ -150,7 +154,7 @@ int     main(int argc, char** argv)
     if(myID==0)
 	{
 		wtime	= MPI_Wtime() - wtime;	// Record the end time and calculate elapsed time
-		cout << "Simulation took " << wtime << " seconds with " << N_Procs << " processes" << endl;
+		cout << "Simulation took " << wtime << " seconds with " << N_Procs << " processes and " << N_Threads << " Threads" << endl;
 	} //Added
 
     MPI_Buffer_detach(&buffer, &bufferSize); //Added
@@ -558,6 +562,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
     // Compute the initial residual
 	A.multiply(Aphi, phi, Free, Free);
 	exchangeData(Aphi, Boundaries, myN_b); //Added
+    #pragma omp parallel for default(none) shared(N_row, Free, r_old, b, Aphi, d)
     for(m=0; m<N_row; m++)
     {
         if(Free[m])
@@ -566,6 +571,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
             d[m]		= r_old[m];
         }
     }
+
     r_oldTr_old	= computeInnerProduct(r_old, r_old, Free, yourPoints, N_row);
     r_norm		= sqrt(r_oldTr_old);
 
@@ -576,6 +582,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 		exchangeData(Ad, Boundaries, myN_b);
 		dTAd	= computeInnerProduct(d, Ad, Free, yourPoints, N_row);
 		alpha  	= r_oldTr_old/dTAd;
+                #pragma omp parallel for default(none) shared(N_row, Free, phi, alpha, d)
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -583,6 +590,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 				phi[m] += alpha*d[m];
 			}
 		}
+                #pragma omp parallel for default(none) shared(N_row, Free, r, r_old, alpha, Ad)
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -592,6 +600,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 		}
 		rTr	= computeInnerProduct(r, r, Free, yourPoints, N_row);
 		beta  	= rTr/r_oldTr_old;
+                #pragma omp parallel for default(none) shared(N_row, Free, d, r, beta )
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -599,6 +608,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 				d[m] = r[m] + beta*d[m];
 			}
 		}
+                #pragma omp parallel for default(none) shared (N_row, Free, r_old, r)
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -629,6 +639,7 @@ double	computeInnerProduct(double* v1, double* v2, bool* Free, bool* yourPoints,
 	double		myInnerProduct	= 0.0;
 	double		innerProduct	= 0.0;
 
+        #pragma omp parallel for default(none) shared(N_row, Free, yourPoints, v1,v2) reduction (+:myInnerProduct)
 	for(int m=0; m<N_row; m++)
 	{
 		if(Free[m] && !yourPoints[m])
