@@ -25,7 +25,7 @@ public:
 		N_row_			= 0;
 		N_nz_			= 0;
 		N_nz_rowmax_	= 0;
-		N_allocated_	= 0;
+		allocSize_		= 0;
 		val_			= NULL;
 		col_			= NULL;
 		row_			= NULL;
@@ -43,16 +43,16 @@ public:
 		N_row_			= nrow;
 		N_nz_			= 0;
 		N_nz_rowmax_	= nnzperrow;
-		N_allocated_	= N_row_*N_nz_rowmax_;
-		val_			= new double	[N_allocated_];
-		col_			= new int		[N_allocated_];
+		allocSize_		= N_row_*N_nz_rowmax_;
+		val_			= new double	[allocSize_];
+		col_			= new int		[allocSize_];
 		row_			= new int		[N_row_+1];
 		nnzs_			= new int		[N_row_];
 
-		memset(val_,  0, N_allocated_ *sizeof(double));
-		memset(col_,  -1, N_allocated_*sizeof(int));
-		memset(row_,  0, (N_row_+1)   *sizeof(int));
-		memset(nnzs_, 0, (N_row_+1)   *sizeof(int));
+		memset(val_,  0, allocSize_ *sizeof(double));
+		memset(col_,  -1, allocSize_ *sizeof(int));
+		memset(row_,  0, (N_row_+1) *sizeof(int));
+		memset(nnzs_, 0, (N_row_) *sizeof(int));
 
 		for(int k=0, kk=0; k<N_row_; k++, kk+=N_nz_rowmax_)
 		{
@@ -77,12 +77,12 @@ public:
 		double* tempVal		= new double [N_nz_];
 		int*	tempCol		= new int	 [N_nz_];
 		int*	tempRow		= new int	 [N_row_+1];
-		bool*	isSorted	= new bool	 [N_allocated_]; // This array will help us sort the column indices
+		bool*	isSorted	= new bool	 [allocSize_]; // This array will help us sort the column indices
 
-		memset(tempVal,  0, N_nz_       *sizeof(double));
-		memset(tempCol,  0, N_nz_       *sizeof(int));
-		memset(tempRow,  0, (N_row_+1)  *sizeof(int));
-		memset(isSorted, 0, N_allocated_*sizeof(bool));
+		memset(tempVal,  0, N_nz_     *sizeof(double));
+		memset(tempCol,  0, N_nz_     *sizeof(int));
+		memset(tempRow,  0, (N_row_+1)*sizeof(int));
+		memset(isSorted, 0, allocSize_*sizeof(bool));
 
 		for(int m=0; m<N_row_; m++)
 		{
@@ -115,7 +115,7 @@ public:
 		col_		= tempCol;
 		row_		= tempRow;
 		nnzs_		= NULL;
-		N_allocated_	= N_nz_;
+		allocSize_	= N_nz_;
 
 		return;
 	}
@@ -168,14 +168,14 @@ public:
 		N_row_			= A.N_row_;
 		N_nz_			= A.N_nz_;
 		N_nz_rowmax_	= A.N_nz_rowmax_;
-		N_allocated_	= A.N_allocated_;
-		val_			= new double [N_allocated_];
-		col_			= new int    [N_allocated_];
-		row_			= new int    [N_row_+1];
+		allocSize_		= A.allocSize_;
+		val_			= new double	[allocSize_];
+		col_			= new int		[allocSize_];
+		row_			= new int		[N_row_+1];
 
-		memcpy(val_, A.val_, N_nz_	   *sizeof(double));
-		memcpy(col_, A.col_, N_nz_	   *sizeof(int));
-		memcpy(row_, A.row_, (N_row_+1)*sizeof(int));
+		memcpy(val_, A.val_, N_nz_		*sizeof(double));
+		memcpy(col_, A.col_, N_nz_		*sizeof(int));
+		memcpy(row_, A.row_, (N_row_+1) *sizeof(int));
 	}
     inline
 	void	multiply(double* u, double* v)
@@ -234,7 +234,7 @@ public:
 	void	print(const char* name)
 	{
 		fstream matrix;
-		cout << "Matrix " << name << " has " << N_row_ << " rows with " << N_nz_ << " non-zero entries - " << N_allocated_ << " allocated." << flush;
+		cout << "Matrix " << name << " has " << N_row_ << " rows with " << N_nz_ << " non-zero entries - " << allocSize_ << " allocated." << flush;
 		matrix.open(name, ios::out);
 		matrix << "Mat = [" << endl;
 		for(int m=0; m<N_row_; m++)
@@ -255,14 +255,14 @@ protected:
 		// Double the memory allocation size
 		N_nz_rowmax_ *= 2;
 
-		N_allocated_ = N_nz_rowmax_*N_row_;
+		allocSize_ = N_nz_rowmax_*N_row_;
 
 		// Create some temporary arrays of the new size
-		double* tempVal = new double [N_allocated_];
-		int*	tempCol = new int    [N_allocated_];
+		double* tempVal = new double [allocSize_];
+		int*	tempCol = new int    [allocSize_];
 
-		memset(tempVal, 0, N_allocated_*sizeof(double));
-		memset(tempCol, 0, N_allocated_*sizeof(int));
+		memset(tempVal, 0, allocSize_*sizeof(double));
+		memset(tempCol, 0, allocSize_*sizeof(int));
 
 		for(int m=0, mm=0; m<N_row_; m++, mm+=N_nz_rowmax_)
 		{
@@ -289,7 +289,5 @@ private:
 	int		N_row_;			// The number of rows in the matric
 	int		N_nz_;			// The number of non-zero entries currently stored in the matrix
 	int		N_nz_rowmax_;	// The maximum number of non-zero entries per row. This will be an estimate until the matrix is assembled
-	int		N_allocated_;	// The number of non-zero entries currently allocated for in val_ and col_
+	int		allocSize_;		// The number of non-zero entries currently allocated for in val_ and col_
 };
-
-

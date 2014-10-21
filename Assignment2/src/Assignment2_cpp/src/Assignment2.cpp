@@ -243,7 +243,7 @@ void	writeData(double* phi, double**& Points, int**& Elements, int& myN_p, int& 
 	fstream         file;
     char            fileName[64];
     
-    sprintf(fileName, "VTKOutput/Tutorial_6_%04d.vtk", l);
+    sprintf(fileName, "VTKOutput/sequential/Assignment2_%04d.vtk", l);
 	
     file.open(fileName, ios::out);
 	
@@ -463,7 +463,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
     double	dTAd			= 0.0;
     int		k				= 0;
     int		m				= 0;
-    int		n				= 0;
+    //int		n				= 0;
 
     memset(r_old,		0, N_row*sizeof(double));
     memset(r,			0, N_row*sizeof(double));
