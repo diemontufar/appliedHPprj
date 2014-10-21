@@ -1,15 +1,26 @@
 \documentclass[12pt]{article}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage[]{mcode}
 \usepackage[a4paper, total={6in, 8in}]{geometry}
 \setlength{\parindent}{0pt}
 \usepackage{color}
 \newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
+\usepackage{xcolor}
+\usepackage{listings}
+ 
+% Copied from the listings documentation
+\lstdefinestyle{numbers} {numbers=left, stepnumber=1, numberstyle=\tiny, numbersep=10pt}
+\lstdefinestyle{MyFrame}{backgroundcolor=\color{yellow},frame=shadowbox}
 
+\lstdefinestyle{MyCStyle} {language=C,style=numbers,style=MyFrame,frame=lines}
+\lstdefinestyle{MyC++Style} {language=C++,style=MyFrame,frame=none,backgroundcolor={}}
+
+\lstset{language=C,frame=lines}
+\lstset{language=C++,frame=none}
 
 \begin{document}
-	
-	
+
 	\title{Finite Element Method for The Heat equation}
 	\author{Andres Chaves(), Diego Montufar(661608)}
 	
@@ -246,8 +257,10 @@ and:
 
 Where for the 3D case $\Omega_e$ and $\Gamma_e$ represent the volume and face area of a tetrahedron respectively.
 
-Let's first
-consider the integration of the shape functions as required in the mass matrix from Equation (16):
+\subsection{Derive element matrices for the System}
+
+
+Let's first consider the integration of the shape functions as required in the mass matrix from Equation (16):
 
 $$
 M_{p,q}^e = \rho C \int\limits_{\Omega_e} \eta_p \eta_q d\Omega
@@ -403,15 +416,125 @@ So we can write the contribution to our load vector as:
 \end{bmatrix}
 \end{equation}
 
-%----------------------------------------------------------
-	\section{Implementation}
-	Write your Implementation here.
+\subsection{Assemble}
 
-	\subsection{Matlab program}
-	Write your Implementation here.
-	
-	\subsection{Hybrid openMP and MPI program}
-	Write your Implementation here.
+\subsection{Apply Boundary conditions}
+
+\section{Problem Solution and Implementation}
+
+In order to compute the solution of the problem, firstly we implemented a Matlab program using a Box grid as our first approach to test the results. Then we translated it into its c++ sequential version. At this point we'll be going to show the output results in Paraview through an unstructured Box grid as well as a more complex figure representing a CPU heat sink. After getting the desired results we are going to parallelize the sequential version of the c++ code by using MPI and openMP.
+
+\subsection{Matlab and C++ implementation}
+As we are going to reuse the code provided in the Lectures and tutorials, we decided to describe only the part of the code that was modified/added and some relevant comments related to it. For this part of the implementation we used the \textit{Example21-4.m} for the matlab code and \textit{Example21-4.cpp} for the c++ sequential version. The domain will be in $x\in[0,0.02]$, $y\in[0,0.02]$, $z\in[0,0.02]$ and $t\epsilon[0,100]$. For the spatial discretization we will use the Finite Element method with linear tetrahedral elements, for the temporal discretization we will use the implicit Euler method, and we will solve the resulting linear system with the Conjugate Gradient method. The first step is to set up all the constant terms from the Heat equation. This could be done by adding the next lines:
+
+\begin{lstlisting}
+    rho            = 8954.00;
+    C              = 380.00;
+    k              = 386.00;
+    h              = 100.00;
+    Tair           = 300.00;
+    Qcpu           = 40000.00;
+\end{lstlisting}
+
+In c++ we could do the similar:
+
+\begin{lstlisting}[style=MyC++Style]
+const double rho            = 8954.00;
+const double C              = 380.00;
+const double k              = 386.00;
+const double h              = 100.00;
+const double Tair           = 300.00;
+const double Qcpu           = 40000.00;
+\end{lstlisting}
+
+As mentioned in the problem statement, we assumed the initial temperature of the cooling fins as ambient (300K). Thus we set the initial condition as follows:
+
+\begin{lstlisting}
+ % Set initial condition
+    phi(:,1)        = 300;
+\end{lstlisting}
+
+And in the c++ version:
+
+\begin{lstlisting}[style=MyC++Style]
+for(int m=0; m<N_p; m++)
+{
+	phi[m]	= 300;
+}
+\end{lstlisting}
+
+In Matlab the read function is defined to return the value of the Points, Faces, Elements, Boundaries as well as total number of points, faces, elements and boundaries defined in the .grid files.
+The .grid file is defined almost the same for the Matlab program and its c++ version, the only difference is that we need to define explicitly the parameter values in Matlab and the c++ 
+program has to go through the file by reading line by line. An example of the .grid file is shown as follows:
+
+\begin{lstlisting}
+N_p = 812;
+N_f = 1244;
+N_e = 2949;
+N_b = 2;
+Points = [
+0.00000	0.00000	0.00000
+0.00000	0.02000	0.00000
+0.02000	0.02000	0.00000
+...
+];
+Faces = [
+     9	    10	   185
+     9	   155	     1
+     9	   185	   155
+...
+];
+Elements = [
+   574	   544	   556	   757
+   686	   133	   169	   740
+   237	   725	   240	   754
+...
+];
+Boundaries = struct('name',{},'type',{},'N',{},'indices',{},'value',{});
+Boundaries(1).name    = 'Fins';
+Boundaries(1).type    = 'robin';
+Boundaries(1).N       = 1050;
+Boundaries(1).indices = [ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 ... ];
+Boundaries(1).value   = 0.00000;
+...
+\end{lstlisting}
+
+The read function for the c++ version was modified in order to get the data for the linear tetrahedron elements defined in the unstructured grid from the file. This file could be a simple Box grid or as we will see later, a more complex form like a CPU sink. The array variables which will store all the information needed are:
+
+\begin{lstlisting}[style=MyC++Style]
+file >> temp >> N_p;
+file >> temp >> N_f;
+file >> temp >> N_e;
+file >> temp >> N_b;
+
+Points			= new double*	[N_p];
+Faces			= new int*		[N_f];
+Elements		= new int*		[N_e];
+Boundaries		= new Boundary  [N_b];
+Points[0]       = new double    [N_p*3];
+Faces[0]        = new int       [N_f*3];
+Elements[0]     = new int       [N_e*4];
+\end{lstlisting}
+
+Where "file" is the fstream object which handles the input file, the temp variable will be used to read and store some 'useless' data from the file (i.e. the description labels for each value) and a Boundaries variable which is an instance of 
+the Boundary class. At this point we should mention that Matlab allow us to store data in matrices and to perform basic linear algebra operations very easily with them, however, we cannot do the exactly the same with c++. As we are going to to store and compute big amount of data, specially when we are dealing with the global system of equations after the assemble process, we are going to make use of the provided SparseMatrix and Boundary class definitions. For example   
+
+  
+
+\begin{center}
+  \includegraphics[width=0.8\textwidth]{matlab1}
+\end{center}
+
+\begin{center}
+  \includegraphics[width=0.8\textwidth]{matlab2}
+\end{center}
+
+\subsection{Parallel MPI C++ implementation}
+
+\subsection{Hybrid openMP and MPI implementation}
+
+
+%----------------------------------------------------------
 	
 	\section{Discussion}
 	Write your Discussion here.	
