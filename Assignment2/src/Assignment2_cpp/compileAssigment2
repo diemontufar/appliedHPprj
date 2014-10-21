@@ -8,7 +8,7 @@ rm -rf Assignment2.exe Assignment2_MPI.exe
 rm -rf Assignment2.data Assignment2_MPI.data
 
 #Compile Sequential Program
-g++  ../src/Assignment2.cpp -o Assignment2.exe
+#g++  ../src/Assignment2.cpp -o Assignment2.exe
 
 #Compile MPI version
 mpicxx ../src/Assignment2_MPI.cpp -o Assignment2_MPI

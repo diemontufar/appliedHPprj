@@ -463,7 +463,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed)
     double	dTAd			= 0.0;
     int		k				= 0;
     int		m				= 0;
-    int		n				= 0;
+    //int		n				= 0;
 
     memset(r_old,		0, N_row*sizeof(double));
     memset(r,			0, N_row*sizeof(double));
