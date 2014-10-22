@@ -227,7 +227,7 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
     {
         Elements[e] = &Elements[0][ee];
     }
-    memset(yourPoints, false, myN_p*sizeof(bool)); //Added
+    memset(yourPoints, true, myN_p*sizeof(bool));
 
     file >> temp;
     for(int p=0; p<myN_p; p++)
@@ -266,7 +266,7 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
 			{
 				for(int p=0; p<Boundaries[b].N_; p++)
 				{
-					yourPoints[Boundaries[b].indices_[p]]	= true;
+					yourPoints[Boundaries[b].indices_[p]]	= false;
 				}
 			}
 		}
@@ -373,18 +373,22 @@ void	assembleSystem(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bo
 		cout << "Assembling system... " << flush;
 	}
 
-    double	x[4];
-    double	y[4];
-    double	z[4]; //Added
-    double	gradEta[3][4]; //Resized
-    double	gradEta_p[3]= {0.0, 0.0, 0.0}; //Resized
-    double	gradEta_q[3]= {0.0, 0.0, 0.0}; //Resized
-    double	M_e[4][4]	= {{2.0, 1.0, 1.0, 1.0}, {1.0, 2.0, 1.0, 1.0}, {1.0, 1.0, 2.0, 1.0}, {1.0, 1.0, 1.0, 2.0}}; //Resized
-    double	k_e[3][3]	= {{2.0, 1.0, 1.0}, {1.0, 2.0, 1.0}, {1.0, 1.0, 2.0}}; //Added
-    double	s_e[4]		= {1.0, 1.0, 1.0, 1.0}; //Resized
-    int		Nodes[4]	= {0, 0, 0, 0}; //Resized
-    double* Omega		= new double [myN_e];
-    double* Gamma		= new double [myN_f];
+	double	x[4]; //As we are dealing with 3D and 4 nodes
+	double	y[4]; //As we are dealing with 3D and 4 nodes
+	double	z[4]; //As we are dealing with 3D and 4 nodes
+	double	gradEta[3][4]; //As we are dealing with 3D and 4 nodes
+	double	gradEta_p[3]= {0.0, 0.0, 0.0}; //As a resulting column vector with 3 entries
+	double	gradEta_q[3]= {0.0, 0.0, 0.0}; //As a resulting column vector with 3 entries
+	//The Mass element Matrix
+	double	M_e[4][4]	= {{2.0, 1.0, 1.0, 1.0}, {1.0, 2.0, 1.0, 1.0}, {1.0, 1.0, 2.0, 1.0}, {1.0, 1.0, 1.0, 2.0}};
+	//The contribution to the Stiffness Matrix
+	double	k_e[3][3]	= {{2.0, 1.0, 1.0}, {1.0, 2.0, 1.0}, {1.0, 1.0, 2.0}};
+	//The contribution to the Load vector
+	double	s_e[4]		= {1.0, 1.0, 1.0, 1.0};
+
+	int		Nodes[4]	= {0, 0, 0, 0}; //Define the number of nodes: 4
+	double* Omega		= new double [myN_e]; //Volume domain
+	double* Gamma		= new double [myN_f]; //Area domain
     int		m;
     int		n;
 

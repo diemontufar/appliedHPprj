@@ -1,6 +1,7 @@
 \documentclass[12pt]{article}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{float}
 \usepackage[]{mcode}
 \usepackage[a4paper, total={6in, 8in}]{geometry}
 \setlength{\parindent}{0pt}
@@ -499,7 +500,7 @@ Boundaries(1).value   = 0.00000;
 ...
 \end{lstlisting}
 
-The read function for the c++ version was modified in order to get the data for the linear tetrahedron elements defined in the unstructured grid from the file. This file could be a simple Box grid or as we will see later, a more complex form like a CPU sink. The array variables which will store all the information needed are:
+The \textit{read} function for the c++ version was modified in order to get the data for the linear tetrahedron elements defined in the unstructured grid from the file. This file could be a simple Box grid or as we will see later, a more complex form like a CPU sink. We will be storing three arrays for this problem; an array called Points which is an $N_p$x$3$ array storing the x, y and z coordinates of the points defining the grid, an array called Faces which is an $N_f$x$3$ array storing the three indices of the points defining a face in the grid, and an array called Elements which is an $N_e$x$4$ array storing the three indices of the points defining an element in the grid, we can see this definitions in the following code:
 
 \begin{lstlisting}[style=MyC++Style]
 file >> temp >> N_p;
@@ -516,18 +517,112 @@ Faces[0]        = new int       [N_f*3];
 Elements[0]     = new int       [N_e*4];
 \end{lstlisting}
 
-Where "file" is the fstream object which handles the input file, the temp variable will be used to read and store some 'useless' data from the file (i.e. the description labels for each value) and a Boundaries variable which is an instance of 
-the Boundary class. At this point we should mention that Matlab allow us to store data in matrices and to perform basic linear algebra operations very easily with them, however, we cannot do the exactly the same with c++. As we are going to to store and compute big amount of data, specially when we are dealing with the global system of equations after the assemble process, we are going to make use of the provided SparseMatrix and Boundary class definitions. For example   
+Where "file" is the fstream object which handles the input file, the "temp" variable will be used to read and store some 'useless' data from the file (i.e. the description labels for each value), All the arrays to store Points, Faces and Elements, and finally a "Boundaries" variable which is an instance of the \textit{Boundary} class. 
+\\\\
+At this point we should mention that Matlab allow us to store data in matrices and to perform basic linear algebra operations very easily with them, however, we cannot do exactly the same with c++. As we are going to store and compute a quite big amount of data, specially when we are dealing with the global system of equations after the assemble process, we are going to make use of the provided \textit{SparseMatrix} and \textit{Boundary} class definitions as 'includes' in our program. The first one handles basic operations between matrices like sums, subtracts, multiplications, etc. And the second one is a basic data structure to store all the information related to Boundaries defined on each grid file. 
+\\\\
 
-  
+Now we have all the variables ready to load all the data from the input files, and this can be done simply by looping over each parameter and structure defined in the file as follows:
 
-\begin{center}
-  \includegraphics[width=0.8\textwidth]{matlab1}
-\end{center}
+\begin{lstlisting}[style=MyC++Style]
+file >> temp;
+for(int p=0; p<N_p; p++){
+	file >> Points[p][0] >> Points[p][1] >> Points[p][2];
+}
 
-\begin{center}
-  \includegraphics[width=0.8\textwidth]{matlab2}
-\end{center}
+file >> temp;
+for(int f=0; f<N_f; f++){
+	file >> Faces[f][0] >> Faces[f][1] >> Faces[f][2];
+}
+
+file >> temp;
+for(int e=0; e<N_e; e++){
+	file >> Elements[e][0] >> Elements[e][1] >> Elements[e][2] >> Elements[e][3];
+}
+\end{lstlisting}
+
+At this point we can apply the spatial discretization that is the Finite Element method to our PDE. We know that we will have a discrete system which takes the form $M\dot{T} = KT + s$ with each element matrix and load vectors defined in Equation 16,17 and 18 respectively, with that in mind now we are going to compute all those local element matrices by using the derivations performed in part 3.3.
+\\\\
+To assemble these matrices we are going to need to evaluate $\Omega_e$ and $\Gamma_f$ for the elements and faces respectively. Now in this case for the 3D Heat Equation $\Omega_e$ is the volume of each tetrahedron, which we can evaluate in matlab as:
+
+\begin{lstlisting}
+% Calculate element volumes
+for e=1:N_e	
+	x           = Points(Elements(e, :), 1);
+	y           = Points(Elements(e, :), 2);
+	z           = Points(Elements(e, :), 3);
+	Omega(e)	= abs(    x(1)*y(2)*z(3) - x(1)*y(3)*z(2) - x(2)*y(1)*z(3) ...
+						+ x(2)*y(3)*z(1) + x(3)*y(1)*z(2) - x(3)*y(2)*z(1) ...
+						- x(1)*y(2)*z(4) + x(1)*y(4)*z(2) + x(2)*y(1)*z(4) ...
+						- x(2)*y(4)*z(1) - x(4)*y(1)*z(2) + x(4)*y(2)*z(1) ...
+						+ x(1)*y(3)*z(4) - x(1)*y(4)*z(3) - x(3)*y(1)*z(4) ...
+						+ x(3)*y(4)*z(1) + x(4)*y(1)*z(3) - x(4)*y(3)*z(1) ...
+						- x(2)*y(3)*z(4) + x(2)*y(4)*z(3) + x(3)*y(2)*z(4) ...
+						- x(3)*y(4)*z(2) - x(4)*y(2)*z(3) + x(4)*y(3)*z(2) ) /6;
+end
+\end{lstlisting}
+
+And the c++ version which looks similar for that part would be:
+
+\begin{lstlisting}[style=MyC++Style]
+for(int e=0; e<N_e; e++)
+{
+	for(int p=0; p<4; p++)
+	{
+		x[p]	= Points[Elements[e][p]][0];
+		y[p]	= Points[Elements[e][p]][1];
+		z[p]	= Points[Elements[e][p]][2];
+	}
+	Omega[e]    = abs(x[0]*y[1]*z[2] - x[0]*y[2]*z[1] - x[1]*y[0]*z[2]
+				 + x[1]*y[2]*z[0] + x[2]*y[0]*z[1] - x[2]*y[1]*z[0]
+				 - x[0]*y[1]*z[3] + x[0]*y[3]*z[1] + x[1]*y[0]*z[3]
+				 - x[1]*y[3]*z[0] - x[3]*y[0]*z[1] + x[3]*y[1]*z[0]
+				 + x[0]*y[2]*z[3] - x[0]*y[3]*z[2] - x[2]*y[0]*z[3]
+				 + x[2]*y[3]*z[0] + x[3]*y[0]*z[2] - x[3]*y[2]*z[0]
+				 - x[1]*y[2]*z[3] + x[1]*y[3]*z[2] + x[2]*y[1]*z[3]
+				 - x[2]*y[3]*z[1] - x[3]*y[1]*z[2] + x[3]*y[2]*z[1]) /6;
+}
+\end{lstlisting}
+
+In 3D $\Gamma_f$ is a face area and we can compute this in matlab quite simply via:
+
+\begin{lstlisting}
+% Calculate face areas
+for f=1:N_f	
+	x           = Points(Faces(f, :), 1);
+	y           = Points(Faces(f, :), 2);
+	z           = Points(Faces(f, :), 3);
+	Gamma(f)	= sqrt(((y(2)-y(1))*(z(3)-z(1)) - (z(2)-z(1))*(y(3)-y(1)))^2 ... 
+	   + ((z(2)-z(1))*(x(3)-x(1)) - (x(2)-x(1))*(z(3)-z(1)))^2 ...
+	   + ((x(2)-x(1))*(y(3)-y(1)) - (y(2)-y(1))*(x(3)-x(1)))^2)/2;
+end
+\end{lstlisting}
+
+And in c++:
+
+\begin{lstlisting}[style=MyC++Style]
+for(int f=0; f<N_f; f++){
+	for(int p=0; p<3; p++){
+		x[p]	= Points[Faces[f][p]][0];
+		y[p]	= Points[Faces[f][p]][1];
+		z[p]	= Points[Faces[f][p]][2];
+	}
+	Gamma[f]	= sqrt(pow(((y[1]-y[0])*(z[2]-z[0]) - (z[1]-z[0])*(y[2]-y[0])),2)
+				+ pow(((z[1]-z[0])*(x[2]-x[0]) - (x[1]-x[0])*(z[2]-z[0])),2)
+				+ pow(((x[1]-x[0])*(y[2]-y[0]) - (y[1]-y[0])*(x[2]-x[0])),2))/2;
+}
+\end{lstlisting}
+
+The next step is to loop over the nodes of an element and evaluate the terms in the local mass and stiffness matrices as well as the load vector. An important point to note here is that all the contributions to the load vector correspond to boundary values,  they will be computed later when we in fact will be computing the Boundaries. \cite{Steve13}
+
+
+The final results obtained with the simulations of our Matlab program are shown on Figure \ref{fig:matlab1}
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.6]{matlab1}
+    \caption{Figure (1.a) Heat flux trough an unstructured Box grid using linear tetrahedral elements. Figure (1.b) Maximum temperature after 100s}
+    \label{fig:matlab1}
+\end{figure}
 
 \subsection{Parallel MPI C++ implementation}
 
@@ -549,8 +644,109 @@ the Boundary class. At this point we should mention that Matlab allow us to stor
 %		\label{simulationfigure}
 %	\end{figure}
 	
+	\section{Appendices}
+	
+	\textbf{APPENDIX A.} Matlab simulation on a Box grid with Finite Element Method for linear 3D tetrahedral elements and Implicit Euler Method.
+	
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{matlab-results/1.png}
+    \centering
+    \caption{Initial state of Temperature}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{matlab-results/2.png}
+    \centering
+    \caption{Temperature after 25 time step}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{matlab-results/3.png}
+    \centering
+    \caption{Temperature after 50 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{matlab-results/4.png}
+    \centering
+    \caption{Temperature after 75 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{matlab-results/5.png}
+    \centering
+    \caption{Temperature after 100 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{matlab-results/7.png}
+    \centering
+    \caption{Temperature after 100 time steps, 3D Box perspective}
+	\end{figure}	
+
+	
+\textbf{APPENDIX B.} c++ sequential simulation on a Box grid with Finite Element Method for linear 3D tetrahedral elements and Implicit Euler Method.
+	
+	\begin{figure}[H]
+    \includegraphics[scale=0.4]{box-sequential/boxSequential_ts1.png}
+    \centering
+    \caption{Initial state of Temperature}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.4]{box-sequential/boxSequential_ts25.png}
+    \centering
+    \caption{Temperature after 25 time step}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.4]{box-sequential/boxSequential_ts50.png}
+    \centering
+    \caption{Temperature after 50 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.4]{box-sequential/boxSequential_ts75.png}
+    \centering
+    \caption{Temperature after 75 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.4]{box-sequential/boxSequential_ts100.png}
+    \centering
+    \caption{Temperature after 100 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.3]{box-sequential/box3dview.png}
+    \centering
+    \caption{Temperature after 100 time steps, 3D Box perspective}
+	\end{figure}	
+
+\textbf{APPENDIX C.} c++ Hybrid simulation on a CPU sink grid with Finite Element Method for linear 3D tetrahedral elements and Implicit Euler Method.
+	
+	\begin{figure}[H]
+    \includegraphics[scale=0.3]{sink-MPI/heatSink_mpi_ts1.png}
+    \centering
+    \caption{Initial state of Temperature}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.3]{sink-MPI/heatSink_mpi_ts25.png}
+    \centering
+    \caption{Temperature after 25 time step}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.3]{sink-MPI/heatSink_mpi_ts50.png}
+    \centering
+    \caption{Temperature after 50 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.3]{sink-MPI/heatSink_mpi_ts75.png}
+    \centering
+    \caption{Temperature after 75 time steps}
+	\end{figure}	
+	\begin{figure}[H]
+    \includegraphics[scale=0.3]{sink-MPI/heatSink_mpi_ts99.png}
+    \centering
+    \caption{Temperature after 100 time steps}
+	\end{figure}	
+
 	\section{References}
-	Write your References here.
+	
+	
+	\bibliographystyle{amsplain}
+	\bibliography{references}
+	
 	
 	
 \end{document}

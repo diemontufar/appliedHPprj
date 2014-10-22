@@ -287,18 +287,22 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
 {
     cout << "Assembling system... " << flush;
 
-    double	x[4];
-    double	y[4];
-    double	z[4]; //Added
-    double	gradEta[3][4]; //Resized
-    double	gradEta_p[3]= {0.0, 0.0, 0.0}; //Resized
-    double	gradEta_q[3]= {0.0, 0.0, 0.0}; //Resized
-    double	M_e[4][4]	= {{2.0, 1.0, 1.0, 1.0}, {1.0, 2.0, 1.0, 1.0}, {1.0, 1.0, 2.0, 1.0}, {1.0, 1.0, 1.0, 2.0}}; //Resized
-    double	k_e[3][3]	= {{2.0, 1.0, 1.0}, {1.0, 2.0, 1.0}, {1.0, 1.0, 2.0}}; //Added
-    double	s_e[4]		= {1.0, 1.0, 1.0, 1.0}; //Resized
-    int		Nodes[4]	= {0, 0, 0, 0}; //Resized
-    double* Omega		= new double [N_e];
-    double* Gamma		= new double [N_f];
+    double	x[4]; //As we are dealing with 3D and 4 nodes
+    double	y[4]; //As we are dealing with 3D and 4 nodes
+    double	z[4]; //As we are dealing with 3D and 4 nodes
+    double	gradEta[3][4]; //As we are dealing with 3D and 4 nodes
+    double	gradEta_p[3]= {0.0, 0.0, 0.0}; //As a resulting column vector with 3 entries
+    double	gradEta_q[3]= {0.0, 0.0, 0.0}; //As a resulting column vector with 3 entries
+    //The Mass element Matrix
+    double	M_e[4][4]	= {{2.0, 1.0, 1.0, 1.0}, {1.0, 2.0, 1.0, 1.0}, {1.0, 1.0, 2.0, 1.0}, {1.0, 1.0, 1.0, 2.0}};
+    //The contribution to the Stiffness Matrix
+    double	k_e[3][3]	= {{2.0, 1.0, 1.0}, {1.0, 2.0, 1.0}, {1.0, 1.0, 2.0}};
+    //The contribution to the Load vector
+    double	s_e[4]		= {1.0, 1.0, 1.0, 1.0};
+
+    int		Nodes[4]	= {0, 0, 0, 0}; //Define the number of nodes: 4
+    double* Omega		= new double [N_e]; //Volume domain
+    double* Gamma		= new double [N_f]; //Area domain
     int		m;
     int		n;
 
@@ -310,7 +314,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
         s[p]    = 0.0;
     }
 
-    // Calculate face areas (Resized)
+    // Calculate face areas
     for(int f=0; f<N_f; f++)
     {
         for(int p=0; p<3; p++)
@@ -324,7 +328,7 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
         					+ pow(((x[1]-x[0])*(y[2]-y[0]) - (y[1]-y[0])*(x[2]-x[0])),2))/2;
     }
 
-    // Calculate element volumes (Resized)
+    // Calculate element volumes
     for(int e=0; e<N_e; e++)
     {
         for(int p=0; p<4; p++)
