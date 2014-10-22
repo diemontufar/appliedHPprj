@@ -3,7 +3,15 @@
 \usepackage{amsmath}
 \usepackage{float}
 \usepackage[]{mcode}
-\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={210mm,297mm},
+ left=20mm,
+ right=20mm,
+ top=25mm,
+ bottom=25mm,
+ }
 \setlength{\parindent}{0pt}
 \usepackage{color}
 \newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
@@ -11,13 +19,8 @@
 \usepackage{listings}
  
 % Copied from the listings documentation
-\lstdefinestyle{numbers} {numbers=left, stepnumber=1, numberstyle=\tiny, numbersep=10pt}
 \lstdefinestyle{MyFrame}{backgroundcolor=\color{yellow},frame=shadowbox}
-
-\lstdefinestyle{MyCStyle} {language=C,style=numbers,style=MyFrame,frame=lines}
 \lstdefinestyle{MyC++Style} {language=C++,style=MyFrame,frame=none,backgroundcolor={}}
-
-\lstset{language=C,frame=lines}
 \lstset{language=C++,frame=none}
 
 \begin{document}
@@ -421,6 +424,8 @@ So we can write the contribution to our load vector as:
 
 \subsection{Apply Boundary conditions}
 
+Robin boundary convective boundary conditions
+
 \section{Problem Solution and Implementation}
 
 In order to compute the solution of the problem, firstly we implemented a Matlab program using a Box grid as our first approach to test the results. Then we translated it into its c++ sequential version. At this point we'll be going to show the output results in Paraview through an unstructured Box grid as well as a more complex figure representing a CPU heat sink. After getting the desired results we are going to parallelize the sequential version of the c++ code by using MPI and openMP.
@@ -429,12 +434,12 @@ In order to compute the solution of the problem, firstly we implemented a Matlab
 As we are going to reuse the code provided in the Lectures and tutorials, we decided to describe only the part of the code that was modified/added and some relevant comments related to it. For this part of the implementation we used the \textit{Example21-4.m} for the matlab code and \textit{Example21-4.cpp} for the c++ sequential version. The domain will be in $x\in[0,0.02]$, $y\in[0,0.02]$, $z\in[0,0.02]$ and $t\epsilon[0,100]$. For the spatial discretization we will use the Finite Element method with linear tetrahedral elements, for the temporal discretization we will use the implicit Euler method, and we will solve the resulting linear system with the Conjugate Gradient method. The first step is to set up all the constant terms from the Heat equation. This could be done by adding the next lines:
 
 \begin{lstlisting}
-    rho            = 8954.00;
-    C              = 380.00;
-    k              = 386.00;
-    h              = 100.00;
-    Tair           = 300.00;
-    Qcpu           = 40000.00;
+rho            = 8954.00;
+C              = 380.00;
+k              = 386.00;
+h              = 100.00;
+Tair           = 300.00;
+Qcpu           = 40000.00;
 \end{lstlisting}
 
 In c++ we could do the similar:
@@ -451,15 +456,14 @@ const double Qcpu           = 40000.00;
 As mentioned in the problem statement, we assumed the initial temperature of the cooling fins as ambient (300K). Thus we set the initial condition as follows:
 
 \begin{lstlisting}
- % Set initial condition
-    phi(:,1)        = 300;
+% Set initial condition
+phi(:,1)        = 300;
 \end{lstlisting}
 
 And in the c++ version:
 
 \begin{lstlisting}[style=MyC++Style]
-for(int m=0; m<N_p; m++)
-{
+for(int m=0; m<N_p; m++){
 	phi[m]	= 300;
 }
 \end{lstlisting}
@@ -565,10 +569,8 @@ end
 And the c++ version which looks similar for that part would be:
 
 \begin{lstlisting}[style=MyC++Style]
-for(int e=0; e<N_e; e++)
-{
-	for(int p=0; p<4; p++)
-	{
+for(int e=0; e<N_e; e++){
+	for(int p=0; p<4; p++){
 		x[p]	= Points[Elements[e][p]][0];
 		y[p]	= Points[Elements[e][p]][1];
 		z[p]	= Points[Elements[e][p]][2];
@@ -613,7 +615,165 @@ for(int f=0; f<N_f; f++){
 }
 \end{lstlisting}
 
-The next step is to loop over the nodes of an element and evaluate the terms in the local mass and stiffness matrices as well as the load vector. An important point to note here is that all the contributions to the load vector correspond to boundary values,  they will be computed later when we in fact will be computing the Boundaries. \cite{Steve13}
+The next step is to loop over the nodes of an element and evaluate the terms in the local mass and stiffness matrices and the load vector. An important point to note here is that all the contributions to the load vector correspond to boundary values as well as the second term of the stiffness matrix and they will be considered later when we in fact will be computing the Boundaries. \cite{Steve13}
+\\\\
+Now in order to actually implement this in our Matlab code our assemble function is going to involve 'looping' over all of
+the elements in the grid, then looping over all of the nodes of each element. The code will look something like:
+
+\begin{lstlisting}
+% Assemble M, K, and s
+    for e=1:N_e
+	
+	Nodes       = Elements(e,:);
+	x           = Points(Nodes,1);
+	y           = Points(Nodes,2);
+	z           = Points(Nodes,3);
+	gradEta  	= [((y(4)-y(2))*(z(3)-z(2))-(y(3)-y(2))*(z(4)-z(2))), 
+				 ((y(3)-y(1))*(z(4)-z(3))-(y(3)-y(4))*(z(1)-z(3))), 
+				 ((y(2)-y(4))*(z(1)-z(4))-(y(1)-y(4))*(z(2)-z(4))), 
+				 ((y(1)-y(3))*(z(2)-z(1))-(y(1)-y(2))*(z(3)-z(1)));
+				 ((x(3)-x(2))*(z(4)-z(2))-(x(4)-x(2))*(z(3)-z(2))), 
+				 ((x(4)-x(3))*(z(3)-z(1))-(x(1)-x(3))*(z(3)-z(4))), 
+				 ((x(1)-x(4))*(z(2)-z(4))-(x(2)-x(4))*(z(1)-z(4))), 
+				 ((x(2)-x(1))*(z(1)-z(3))-(x(3)-x(1))*(z(1)-z(2)));
+				 ((x(4)-x(2))*(y(3)-y(2))-(x(3)-x(2))*(y(4)-y(2))), 
+				 ((x(3)-x(1))*(y(4)-y(3))-(x(3)-x(4))*(y(1)-y(3))), 
+				 ((x(2)-x(4))*(y(1)-y(4))-(x(1)-x(4))*(y(2)-y(4))), 
+				 ((x(1)-x(3))*(y(2)-y(1))-(x(1)-x(2))*(y(3)-y(1)))]/(6*Omega(e)); 
+	for p=1:4
+		m               = Nodes(p);
+		for q=1:4 
+			n           = Nodes(q);
+			gradEta_q   = [gradEta(1,q), gradEta(2,q), gradEta(3,q)];
+							
+			M(m,n)      = M(m,n) + rho*C*M_e(p,q)*Omega(e)/20;
+			K(m,n)       = K(m,n) - k*dot(gradEta_p,gradEta_q)*(Omega(e));
+		end
+	end
+end
+\end{lstlisting}
+
+As we can see is quite easy to compute the mass matrix and the corresponding contribution to the stiffness matrix as well. The analogous c++ version of that code looks looks this: 
+
+\begin{lstlisting}[style=MyC++Style]
+// Assemble M, K, and s
+M.initialize(N_p, 10);
+K.initialize(N_p, 10);
+
+for(int e=0; e<N_e; e++){
+	for(int p=0; p<4; p++){
+		Nodes[p]= Elements[e][p];
+		x[p]	= Points[Nodes[p]][0];
+		y[p]	= Points[Nodes[p]][1];
+		z[p]	= Points[Nodes[p]][2]; 
+	}
+
+	gradEta[0][0] = ((y[3]-y[1])*(z[2]-z[1])-(y[2]-y[1])*(z[3]-z[1]))/(6*Omega[e]);
+	gradEta[0][1] = ((y[2]-y[0])*(z[3]-z[2])-(y[2]-y[3])*(z[0]-z[2]))/(6*Omega[e]);
+	gradEta[0][2] = ((y[1]-y[3])*(z[0]-z[3])-(y[0]-y[3])*(z[1]-z[3]))/(6*Omega[e]);
+	gradEta[0][3] = ((y[0]-y[2])*(z[1]-z[0])-(y[0]-y[1])*(z[2]-z[0]))/(6*Omega[e]);
+	gradEta[1][0] = ((x[2]-x[1])*(z[3]-z[1])-(x[3]-x[1])*(z[2]-z[1]))/(6*Omega[e]);
+	gradEta[1][1] = ((x[3]-x[2])*(z[2]-z[0])-(x[0]-x[2])*(z[2]-z[3]))/(6*Omega[e]);
+	gradEta[1][2] = ((x[0]-x[3])*(z[1]-z[3])-(x[1]-x[3])*(z[0]-z[3]))/(6*Omega[e]);
+	gradEta[1][3] = ((x[1]-x[0])*(z[0]-z[2])-(x[2]-x[0])*(z[0]-z[1]))/(6*Omega[e]);
+	gradEta[2][0] = ((x[3]-x[1])*(y[2]-y[1])-(x[2]-x[1])*(y[3]-y[1]))/(6*Omega[e]);
+	gradEta[2][1] = ((x[2]-x[0])*(y[3]-y[2])-(x[2]-x[3])*(y[0]-y[2]))/(6*Omega[e]);
+	gradEta[2][2] = ((x[1]-x[3])*(y[0]-y[3])-(x[0]-x[3])*(y[1]-y[3]))/(6*Omega[e]);
+	gradEta[2][3] = ((x[0]-x[2])*(y[1]-y[0])-(x[0]-x[1])*(y[2]-y[0]))/(6*Omega[e]);
+
+	// Outer loop over each node
+	for(int p=0; p<4; p++){
+		m		= Nodes[p];
+		gradEta_p[0]	= gradEta[0][p];
+		gradEta_p[1]	= gradEta[1][p];
+		gradEta_p[2]	= gradEta[2][p];
+
+		// Inner loop over each node
+		for(int q=0; q<4; q++){
+			n			= Nodes[q];
+			gradEta_q[0]		= gradEta[0][q];
+			gradEta_q[1]		= gradEta[1][q];
+			gradEta_q[2]		= gradEta[2][q];
+
+			M(m,n)	   += rho*C*M_e[p][q]*Omega[e]/20;
+			K(m,n)	   -= k*(gradEta_p[0]*gradEta_q[0]
+			+gradEta_p[1]*gradEta_q[1]
+			+gradEta_p[2]*gradEta_q[2])*Omega[e];
+		}
+	}
+}
+\end{lstlisting}
+
+Here we are computing matrices $M$ and $K$, both are instances of the \textit{SparseMatrix} class, thus we can make use of all the defined operations (methods) of that class, in fact, we are initializing the matrices in order to start assigning values to them and also computing some matrix operations like the dot product of the gradients on the right hand side of the $K$ matrix calculation, that could be easily done like Matlab style code.
+\\\\
+Now it's time to compute the Boundary conditions. If we are dealing with a Robin boundary then indices indicates to which points in the Points array the given boundary condition needs to be applied. If however, we are dealing with a Neumann boundary, then indices indicates to which faces in the Faces array the integration of the Neumann boundary condition needs to be performed. So in this case as we mention earlier, for the Robin boundaries we are going to compute the contribution to the load vector and the contribution to the stiffness matrix with the integration performed in the first and second term of Equation (18) respectively. Then we'll do the same with the second term of Equation (17), which corresponds to the Neumann boundary condition. We can do this by adding in another for loop over the boundaries within our Matlab assemble function as:
+
+\begin{lstlisting}
+% Apply boundary conditions
+Fixed = [];
+for b=1:N_b  
+	if  strcmp(Boundaries(b).type, 'neumann')
+		for f=1:Boundaries(b).N;
+			Nodes       = Faces(Boundaries(b).indices(f),:);
+			for p=1:3
+				m     	= Nodes(p);
+				%second term contribution to the load vector
+				s(m)	= s(m)+ s_e(p)*Qcpu*Gamma(Boundaries(b).indices(f))/3; 
+				
+			end
+		end        
+	elseif strcmp(Boundaries(b).type, 'robin')
+	   for f=1:Boundaries(b).N;
+			Nodes       = Faces(Boundaries(b).indices(f),:);
+			for p=1:3
+				m     	= Nodes(p);
+				%first term contribution to the load vector
+				s(m)	= s(m)+ s_e(p)*h*Tair*Gamma(Boundaries(b).indices(f))/3; 
+				for q=1:3
+					n = Nodes(q);
+					%Contribution to the stiffness  matrix
+					K(m,n)=K(m,n)-h*k_e(p,q)*Gamma(Boundaries(b).indices(f))/12; 
+				end
+			end
+	   end
+	end
+	Free = [1:N_p];
+end
+\end{lstlisting}
+
+Where the Free vector is indicating all of the interior Neumann and Robin boundary points where we don't actually know the values of $T$ and the Fixed vector is indicating all of the Dirichlet boundary points where we do. In this case we don't have Dirichlet boundary conditions so in fact all the points will be assigned to the Free vector. The c++ code to assemble the boundaries will be something very similar:
+
+\begin{lstlisting}
+for(int b=0; b<N_b; b++){
+	if		(Boundaries[b].type_=="neumann"){
+		for(int f=0; f<Boundaries[b].N_; f++){
+			for(int p=0; p<3; p++){
+				Nodes[p]	= Faces[Boundaries[b].indices_[f]][p];
+				m			= Nodes[p];
+				//second term contribution to the load vector
+				s[m]	   += s_e[p]*Qcpu*Gamma[Boundaries[b].indices_[f]]/3; 
+			}
+		}
+	}
+	else if	(Boundaries[b].type_=="robin"){
+		for(int f=0; f<Boundaries[b].N_; f++){
+			for(int p=0; p<3; p++){
+				Nodes[p]	= Faces[Boundaries[b].indices_[f]][p];
+				m			= Nodes[p];
+				//second term contribution to the load vector
+				s[m]	   += s_e[p]*h*Tair*Gamma[Boundaries[b].indices_[f]]/3; 
+				 for (int q=0; q<3; q++){
+					 Nodes[q]	= Faces[Boundaries[b].indices_[f]][q];
+					 n = Nodes[q];
+					 //Contribution to the stiffness matrix
+					 K(m,n)    -= h*k_e[p][q]*Gamma[Boundaries[b].indices_[f]]/12; 
+				 }
+			}
+			Free[m] = true;
+		}
+	}
+}
+\end{lstlisting}
 
 
 The final results obtained with the simulations of our Matlab program are shown on Figure \ref{fig:matlab1}
