@@ -468,9 +468,7 @@ for(int m=0; m<N_p; m++){
 }
 \end{lstlisting}
 
-In Matlab the read function is defined to return the value of the Points, Faces, Elements, Boundaries as well as total number of points, faces, elements and boundaries defined in the .grid files.
-The .grid file is defined almost the same for the Matlab program and its c++ version, the only difference is that we need to define explicitly the parameter values in Matlab and the c++ 
-program has to go through the file by reading line by line. An example of the .grid file is shown as follows:
+In Matlab the read function is defined to return the value and number of the Points, Faces, Elements and Boundaries defined in the grid file. This file contains pretty exactly the same for both Matlab and c++ programs, the only difference is that Matlab will 'automatically' set the parameter values in structs and vector variables and the c++ program has to go through the file line by line, so that it can dynamically allocate the required memory and will also 'know' how many of each entity to read in. An example of a grid file is shown as follows:
 
 \begin{lstlisting}
 N_p = 812;
@@ -504,7 +502,7 @@ Boundaries(1).value   = 0.00000;
 ...
 \end{lstlisting}
 
-The \textit{read} function for the c++ version was modified in order to get the data for the linear tetrahedron elements defined in the unstructured grid from the file. This file could be a simple Box grid or as we will see later, a more complex form like a CPU sink. We will be storing three arrays for this problem; an array called Points which is an $N_p$x$3$ array storing the x, y and z coordinates of the points defining the grid, an array called Faces which is an $N_f$x$3$ array storing the three indices of the points defining a face in the grid, and an array called Elements which is an $N_e$x$4$ array storing the three indices of the points defining an element in the grid, we can see this definitions in the following code:
+The \textit{read} function for the c++ version was modified in order to get the data for the linear tetrahedron elements defined in the grid file. This file could be a simple Box grid or a more complex form like a CPU sink. We will be storing three arrays for this problem; an array called Points which is an $N_p$x$3$ array storing the x, y and z coordinates of the points defining the grid, an array called Faces which is an $N_f$x$3$ array storing the three indices of the points defining a face in the grid, and an array called Elements which is an $N_e$x$4$ array storing the three indices of the points defining an element in the grid, we can see this definitions in the following code:
 
 \begin{lstlisting}[style=MyC++Style]
 file >> temp >> N_p;
@@ -523,9 +521,8 @@ Elements[0]     = new int       [N_e*4];
 
 Where "file" is the fstream object which handles the input file, the "temp" variable will be used to read and store some 'useless' data from the file (i.e. the description labels for each value), All the arrays to store Points, Faces and Elements, and finally a "Boundaries" variable which is an instance of the \textit{Boundary} class. 
 \\\\
-At this point we should mention that Matlab allow us to store data in matrices and to perform basic linear algebra operations very easily with them, however, we cannot do exactly the same with c++. As we are going to store and compute a quite big amount of data, specially when we are dealing with the global system of equations after the assemble process, we are going to make use of the provided \textit{SparseMatrix} and \textit{Boundary} class definitions as 'includes' in our program. The first one handles basic operations between matrices like sums, subtracts, multiplications, etc. And the second one is a basic data structure to store all the information related to Boundaries defined on each grid file. 
+At this point we should mention that Matlab allow us to perform basic linear algebra operations very easily with matrices and structs, however, we cannot do exactly the same with c++. As we are going to store and compute a quite big amount of data, specially when we are dealing with the global system of equations after the assemble process, we are going to make use of the provided \textit{SparseMatrix} and \textit{Boundary} class definitions as 'includes' in our c++ program. The first one handles basic operations between matrices like sums, subtracts, multiplications, etc. And the second one is a basic data structure to store all the information related to Boundaries defined on each grid file. 
 \\\\
-
 Now we have all the variables ready to load all the data from the input files, and this can be done simply by looping over each parameter and structure defined in the file as follows:
 
 \begin{lstlisting}[style=MyC++Style]
@@ -586,7 +583,7 @@ for(int e=0; e<N_e; e++){
 }
 \end{lstlisting}
 
-In 3D $\Gamma_f$ is a face area and we can compute this in matlab quite simply via:
+In 3D $\Gamma_f$ is a face area of a triangular element and we can compute this in matlab quite simply via:
 
 \begin{lstlisting}
 % Calculate face areas
@@ -600,7 +597,7 @@ for f=1:N_f
 end
 \end{lstlisting}
 
-And in c++:
+And in c++ we have:
 
 \begin{lstlisting}[style=MyC++Style]
 for(int f=0; f<N_f; f++){
@@ -615,12 +612,18 @@ for(int f=0; f<N_f; f++){
 }
 \end{lstlisting}
 
-The next step is to loop over the nodes of an element and evaluate the terms in the local mass and stiffness matrices and the load vector. An important point to note here is that all the contributions to the load vector correspond to boundary values as well as the second term of the stiffness matrix and they will be considered later when we in fact will be computing the Boundaries. \cite{Steve13}
+The next step is to loop over the nodes of an element and evaluate the terms in the local mass matrix, stiffness matrix and the load vector. An important point to note here is that all the contributions to the load vector correspond to boundary values as well as the second term of the stiffness matrix and they will be considered later when we in fact will be computing the Boundaries. \cite{Steve13}
 \\\\
-Now in order to actually implement this in our Matlab code our assemble function is going to involve 'looping' over all of
+Now in order to actually implement this in our Matlab code, our assemble function is going to involve 'looping' over all of
 the elements in the grid, then looping over all of the nodes of each element. The code will look something like:
 
 \begin{lstlisting}
+...
+M_e             = [2, 1, 1, 1; 
+                   1, 2, 1, 1;
+                   1, 1, 2, 1;
+                   1, 1, 2, 1];
+...
 % Assemble M, K, and s
     for e=1:N_e
 	
@@ -653,9 +656,16 @@ the elements in the grid, then looping over all of the nodes of each element. Th
 end
 \end{lstlisting}
 
-As we can see is quite easy to compute the mass matrix and the corresponding contribution to the stiffness matrix as well. The analogous c++ version of that code looks looks this: 
+As we can see is quite easy to compute the mass matrix and the corresponding contribution to the stiffness matrix as well. The analogous c++ version of that code looks like this: 
 
 \begin{lstlisting}[style=MyC++Style]
+...
+//The Mass element Matrix
+double	M_e[4][4]	= {{2.0, 1.0, 1.0, 1.0}, 
+						{1.0, 2.0, 1.0, 1.0}, 
+						{1.0, 1.0, 2.0, 1.0}, 
+						{1.0, 1.0, 1.0, 2.0}};
+...
 // Assemble M, K, and s
 M.initialize(N_p, 10);
 K.initialize(N_p, 10);
@@ -704,11 +714,17 @@ for(int e=0; e<N_e; e++){
 }
 \end{lstlisting}
 
-Here we are computing matrices $M$ and $K$, both are instances of the \textit{SparseMatrix} class, thus we can make use of all the defined operations (methods) of that class, in fact, we are initializing the matrices in order to start assigning values to them and also computing some matrix operations like the dot product of the gradients on the right hand side of the $K$ matrix calculation, that could be easily done like Matlab style code.
+Here we are computing matrices $M$ and $K$, both are instances of the \textit{SparseMatrix} class, thus we can make use of all the defined operations (methods) of that class, in fact, we are initializing the matrices in order to start assigning values to them and also computing some matrix operations like the dot product of the gradients on the right hand side of the $K(m,n)$ matrix calculation. The only thing to keep in mind is that in our c++ version we should remember that we need to initialize the \textit{SparseMatrix} objects, assemble the coefficients with the overloaded () operator, then finalize them, that could be easily done like we were using Matlab style code.
 \\\\
-Now it's time to compute the Boundary conditions. If we are dealing with a Robin boundary then indices indicates to which points in the Points array the given boundary condition needs to be applied. If however, we are dealing with a Neumann boundary, then indices indicates to which faces in the Faces array the integration of the Neumann boundary condition needs to be performed. So in this case as we mention earlier, for the Robin boundaries we are going to compute the contribution to the load vector and the contribution to the stiffness matrix with the integration performed in the first and second term of Equation (18) respectively. Then we'll do the same with the second term of Equation (17), which corresponds to the Neumann boundary condition. We can do this by adding in another for loop over the boundaries within our Matlab assemble function as:
+Now it's time to compute the Boundary conditions. If we are dealing with a Robin boundaries, then indices indicates to which points in the Points array the given boundary condition needs to be applied. If however, we are dealing with a Neumann boundary, then indices indicates to which faces in the Faces array the integration of the Neumann boundary condition needs to be performed. So in this case as we mention earlier, for the Robin boundaries we are going to compute the contribution to the load vector and the contribution to the stiffness matrix with the integration performed in the first and second term of Equation (18) respectively. Then we'll do the same with the second term of Equation (17), which corresponds to the Neumann boundary condition. We can do this by adding in another for loop over the boundaries within our Matlab assemble function as:
 
 \begin{lstlisting}
+...
+k_e             =   [2, 1, 1; 
+                     1, 2, 1;
+                     1, 1, 2];                   
+s_e             = [1; 1; 1; 1];
+...
 % Apply boundary conditions
 Fixed = [];
 for b=1:N_b  
@@ -741,9 +757,18 @@ for b=1:N_b
 end
 \end{lstlisting}
 
-Where the Free vector is indicating all of the interior Neumann and Robin boundary points where we don't actually know the values of $T$ and the Fixed vector is indicating all of the Dirichlet boundary points where we do. In this case we don't have Dirichlet boundary conditions so in fact all the points will be assigned to the Free vector. The c++ code to assemble the boundaries will be something very similar:
+Where the Free vector is indicating all of the interior Neumann and Robin boundary points where we don't actually know the values of $T$ and the Fixed vector is indicating all of the Dirichlet boundary points where we do. In this case we don't have Dirichlet boundary conditions so in fact all the points will be assigned to the Free vector. The c++ version of the algorithm will look something like:
 
-\begin{lstlisting}
+\begin{lstlisting}[style=MyC++Style]
+...
+//The contribution to the Stiffness Matrix
+double	k_e[3][3]	= {{2.0, 1.0, 1.0}, 
+						{1.0, 2.0, 1.0}, 
+						{1.0, 1.0, 2.0}};
+//The contribution to the Load vector
+double	s_e[4]		= {1.0, 1.0, 1.0, 1.0};
+...
+//Apply Boundary Conditions
 for(int b=0; b<N_b; b++){
 	if		(Boundaries[b].type_=="neumann"){
 		for(int f=0; f<Boundaries[b].N_; f++){
@@ -773,16 +798,82 @@ for(int b=0; b<N_b; b++){
 		}
 	}
 }
+K.finalize();
+M.finalize();
 \end{lstlisting}
 
+Now the final step is the solution of our global assembled system, and we will be partitioning the matrix such that we have: 
 
-The final results obtained with the simulations of our Matlab program are shown on Figure \ref{fig:matlab1}
+$$
+A_{Free,Free}T_{Free}^{l+1}=\textbf{b}_{Free}-A_{Free,Fixed}T_{Free}^{l+1}
+$$
+
+And so we solve a reduced system of equations and with Matlab this could be done as follows:
+
+\begin{lstlisting}
+phi(Free,l+1) = A(Free,Free)\(b(Free) - A(Free,Fixed)*phi(Fixed,l+1));
+\end{lstlisting}
+
+Where \textit{phi} is the general name of our field variable $T$. Here we will only compute the solution for the interior points and so as long as the Robin boundary points are initialized correctly in phi, then we will have imposed
+the boundary conditions correctly. Now that we have shown how we assemble our system of equations, we are now in a position to write out the core of the program as:
+
+\begin{lstlisting}
+...
+A = M - Delta_t*K;
+...
+% Time marching loop
+for l=1:N_t-1
+	
+	b = M*phi(:,l) + Delta_t*s;
+	phi(Free,l+1)	= A(Free,Free)\(b(Free) - A(Free,Fixed)*phi(Fixed,l+1));
+	
+	% Plot phi at every timestep
+    set(Solution, 'CData', phi(:,l+1));
+    title(['t = ' num2str(t(l+1))]);
+    drawnow;
+end
+\end{lstlisting}
+
+If we want to show the results in Matlab, we can do it by updating a Figure inside the time marching loop. At this point we can compute the maximum steady state temperature of the Box grid after 100s which is: 342.427K. The complete Matlab program is given in \textit{Assignment2.m} and the final results obtained with the simulations of our Matlab program are shown on Figure \ref{fig:matlab1}. Further captures are shown in \textbf{APPENDIX A}.
 
 \begin{figure}[h!]
     \includegraphics[scale=0.6]{matlab1}
     \caption{Figure (1.a) Heat flux trough an unstructured Box grid using linear tetrahedral elements. Figure (1.b) Maximum temperature after 100s}
     \label{fig:matlab1}
 \end{figure}
+
+For our c++ version the time marching loop will be a little bit more complex since we don't have the backslash operator to perform matrix operations easily. So we are going to explain the most relevant parts of the following code:
+
+\begin{lstlisting}[style=MyC++Style] 
+1. A = M;
+2. A.subtract(Delta_t, K); // At this point we have A = M-Delta_t*K
+3.
+4. // Compute the column vector to subtract 
+5. //from the right hand side to take account of fixed nodes
+6. A.multiply(AphiFixed, phi, Free, Fixed);
+7.
+8. writeData(phi, Points, Elements, N_p, N_e, 0);
+9. 
+10. // Time marching loop
+11. for(int l=0; l<N_t-1; l++){
+12.	// Assemble b
+13.	M.multiply(b, phi);
+14.	for(int m=0; m<N_p; m++){
+15.		b[m]	+= Delta_t*s[m] - AphiFixed[m];
+16.	}
+17.
+18.	// Solve the linear system
+19.	solve(A, phi, b, Free, Fixed);
+20.
+21.	// Write the solution
+22.	if (l%10==0){
+23.	   writeData(phi, Points, Elements, N_p, N_e, (l+1));
+24.	}
+25.}
+\end{lstlisting}
+
+
+
 
 \subsection{Parallel MPI C++ implementation}
 

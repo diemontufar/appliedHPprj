@@ -87,9 +87,10 @@ function HeatEquationFEM()
     % Plot the maximum temperature
    figure('WindowStyle', 'docked');
    plot(t, max(phi), '-');
+   fprintf('max(T) = %f\n', max(phi));
    grid on;
-    xlabel('Time [s]');
-    ylabel('Maximum Temperature [K]');
+   xlabel('Time [s]');
+   ylabel('Maximum Temperature [K]');
    axis([0,100]);
    set(gcf, 'color', [1 1 1])
    
