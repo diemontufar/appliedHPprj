@@ -209,7 +209,14 @@ Where $M$ represents the Mass matrix, $K$ the Stiffness Matrix, both have size o
  S_{p}^e = h T_{air} \int\limits_{\Gamma_e} \eta_p d\Gamma + k \int\limits_{\Gamma_{e}}{\eta_p\nabla T} \cdot d \mathbf{\Gamma}
 \end{equation}
 
-For this case we are going to use tetrahedral elements, which means we are going to have 4 nodes in a 3D \hilight{element as shown in Figure()}. In order to derive the corresponding shape functions we begin by assuming a trial solution which takes the form:
+For this case we are going to use tetrahedral elements, which means we are going to have 4 nodes in a 3D element as shown in Figure \ref{fig:tetrahedron}. In order to derive the corresponding shape functions we begin by assuming a trial solution which takes the form:
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.4]{tetrahedron.png}
+    \centering
+    \caption{\textit{3D Linear tetrahedron element}}
+    \label{fig:tetrahedron}
+\end{figure}
 
 \begin{equation}
 T(x,y,z) = a_0+a_1x+a_2y+a_3z
@@ -232,9 +239,35 @@ T(x,y,z) = \sum_{n=1}^{N_n} \eta_n{(x,y,z)} T_n = \eta_1 T_1 + \eta_2 T_2 + \eta
 
 Where the shape functions for the linear tetrahedron are:
 
-\begin{center}
-  \includegraphics[width=0.8\textwidth]{ShapeFunctions}
-\end{center}
+\begin{align*}
+\eta_1(x,y,z)=&\frac{1}{6V_e}(
+x_2(y_3z_4-y_4z_3)+x_3(y_4z_2-y_2z_4)+x4(y_2z_3-y_3z_2) \\
+&+ ((y_4-y_2)(z_3-z_2)-(y_3-y_2)(z_4-z_2))x \\
+&+ ((x_3-x_2)(z_4-z_2)-(x_4-x_2)(z_3-z_2))y \\
+&+ ((x_4-x_2)(y_3-y_2)-(x_3-x_2)(y_4-y_2))z)
+\end{align*}
+
+\begin{align*}
+\eta_2(x,y,z)=&\frac{1}{6V_e}(
+x_1(y_4z_3-y_3z_4)+x_3(y_1z_4-y_4z_1)+x4(y_3z_1-y_1z_3) \\
+&+ ((y_3-y_1)(z_4-z_3)-(y_3-y_4)(z_1-z_3))x \\
+&+ ((x_4-x_3)(z_3-z_1)-(x_1-x_3)(z_3-z_4))y \\
+&+ ((x_3-x_1)(y_4-y_3)-(x_3-x_4)(y_1-y_3))z)
+\end{align*}
+\begin{align*}
+\eta_3(x,y,z)&=\frac{1}{6V_e}(
+x_1(y_2z_4-y_4z_2)+x_2(y_4z_1-y_1z_4)+x4(y_1z_2-y_2z_1) \\
+&+ ((y_2-y_4)(z_1-z_4)-(y_1-y_4)(z_2-z_4))x \\
+&+ ((x_1-x_4)(z_2-z_4)-(x_2-x_4)(z_1-z_4))y \\
+&+ ((x_1-x_4)(y_1-y_4)-(x_1-x_4)(y_2-y_4))z)
+\end{align*}
+\begin{align*}
+\eta_4(x,y,z)=&\frac{1}{6V_e}(
+x_1(y_3z_2-y_2z_3)+x_2(y_1z_3-y_3z_1)+x3(y_2z_1-y_1z_2) \\
+&+ ((y_1-y_3)(z_2-z_1)-(y_1-y_2)(z_3-z_1))x \\
+&+ ((x_2-x_1)(z_1-z_3)-(x_3-x_1)(z_1-z_2))y \\
+&+ ((x_1-x_3)(y_2-y_1)-(x_1-x_2)(y_3-y_1))z)
+\end{align*}
 
 Where $V_e$ is the volume of the element and is defined in terms of its nodal coordinates as:
 
@@ -244,9 +277,29 @@ Where $V_e$ is the volume of the element and is defined in terms of its nodal co
 
 And we could express the derivatives of the shape functions as:
 
-\begin{center}
-  \includegraphics[width=0.7\textwidth]{GradientShapeFunctions}
-\end{center}
+\begin{align*}
+\frac{\partial \eta_1(x,y,z)}{\partial x} = \frac{1}{6V_e}((y_4-y_2)(z_3-z_2)-(y_3-y_2)(z_4-z_2)) \\
+\frac{\partial \eta_1(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_3-x_2)(z_4-z_2)-(x_4-x_2)(z_3-z_2)) \\
+\frac{\partial \eta_1(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_4-x_2)(y_3-y_2)-(x_3-x_2)(y_4-y_2))
+\end{align*}
+
+\begin{align*}
+\frac{\partial \eta_2(x,y,z)}{\partial x} = \frac{1}{6V_e}((y_3-y_1)(z_4-z_3)-(y_3-y_4)(z_1-z_3)) \\
+\frac{\partial \eta_2(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_4-x_3)(z_3-z_1)-(x_1-x_3)(z_3-z_4)) \\
+\frac{\partial \eta_2(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_3-x_1)(y_4-y_3)-(x_3-x_4)(y_1-y_3))
+\end{align*}
+
+\begin{align*}
+\frac{\partial \eta_3(x,y,z)}{\partial x} = \frac{1}{6V_e}((y_2-y_4)(z_1-z_4)-(y_1-y_4)(z_2-z_4)) \\
+\frac{\partial \eta_3(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_1-x_4)(z_2-z_4)-(x_2-x_4)(z_1-z_4)) \\
+\frac{\partial \eta_3(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_2-x_4)(y_1-y_4)-(x_1-x_4)(y_2-y_4))
+\end{align*}
+
+\begin{align*}
+\frac{\partial \eta_4(x,y,z)}{\partial x} = \frac{1}{6V_e}((y_2-y_3)(z_2-z_1)-(y_1-y_2)(z_3-z_1)) \\
+\frac{\partial \eta_4(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_2-x_1)(z_1-z_3)-(x_3-x_1)(z_1-z_2)) \\
+\frac{\partial \eta_4(x,y,z)}{\partial x} = \frac{1}{6V_e}((x_1-x_3)(y_2-y_1)-(x_1-x_2)(y_3-y_1))
+\end{align*}
 
 Furthermore, we have the integration formulae defined for the linear tetrahedron:
 
@@ -426,13 +479,11 @@ So we can write the contribution to our load vector as:
 \subsection{Assemble}
 
 There is however the trick question on how to compute all the integrals that appear in the matrix and right hand side of the
-system. This is done by a process called assembly of the system, another 'ingredient' of the many good deeds of the Finite element method. \cite{Sayas}
-
-When we think about how we assemble M , K, and s with the Finite Element method, we loop over all of the elements and for each element loop over all of the nodes that a given element uses, adding in terms to M , K, and s in the rows and columns corresponding to those nodes.
+system. This is done by a process called assembly of the system, another 'ingredient' of the many good deeds of the Finite element method \cite{Sayas}. When we think about how we assemble M , K, and s with the Finite Element method, we loop over all of the elements and for each element loop over all of the nodes that a given element uses, adding in terms to M , K, and s in the rows and columns corresponding to those nodes. 
 
 \subsection{Apply Boundary conditions}
 
-Robin boundary convective boundary conditions
+The final step after assembling our global system is to compute the Robin and Neumann boundary conditions which in fact, have contribution terms to the stiffness matrix and load vector as well. Finally, we can proceed with the solution of the resulting system equations using some numerical method lets say with an implicit Euler method for spatial discretization and a conjugate gradient method for solving systems of equations that could be easily done in Matlab with the backslash operator.
 
 \section{Problem Solution and Implementation}
 
@@ -1299,15 +1350,43 @@ for(int m=0; m<N_row; m++){
 }
 \end{lstlisting}
 
-\begin{lstlisting}[style=MyC++Style]
-
-\end{lstlisting}
+The Hybrid version of the c++ code was added to the $\textit{Assignment2\_MPI.cpp}$ file and can be executed by passing as parameter the path to the grid files folder and the corresponding number of processes. 
 %----------------------------------------------------------
 	
-	\section{Discussion}
-	Write your Discussion here.	
-	
 	\section{Results}
+
+Example:\\\\
+Whatever the domain type, the flat MPI version and the hybrid version with only
+one MPI process per node systematically give the least efficient results.
+\\\\
+Example:\\\\
+The best results are obtained on the hybrid version with (a) a distribution of eight
+MPI processes per node and four OpenMP threads per MPI process for the two
+last test cases, and (b) a distribution of four MPI processes per node and sixteen
+OpenMP threads per MPI process for the first test case.	
+	
+	\section{Discussion}
+
+Through this Assignment we have been following the process of solving a PDE (The heat equation) with the Finite element method. This process included a series of steps starting by the discretization of the domain by deriving the weak form of the PDE with the Garleking method of weighted residuals and the shape functions using 3D linear tetrahedron elements. For the assemble process, computation of boundary conditions and the solution of the problem we implemented a Matlab program which results showed the heat flux on a Grid box (\textbf{APPENDIX A}). Then we developed the c++ sequential version of the program with Implicit Euler Method and the Conjugate Gradient Method for solving the resulting system of equations. After that we developed a parallel Hybrid version of our program using MPI and openMP and showed results of a heat flux in a 3D CPU sink grid (\textbf{APPENDIX C}). Finally we performed some execution and speedup tests on avoca.
+\\\\
+Getting the obtained results we can conclude:
+
+\begin{itemize}
+  \item 
+  \item
+  \item
+  \item  
+  \item Final speedup is limited by the purely sequential fraction of the code (Amdhal’s law).
+  \item Scability is limited due to the additional costs related to the MPI library and load
+balancing management.
+  \item The MPI version still gives the best results in almost every case.
+It appears that the problem always comes from communications which take more
+time in the hybrid version.
+  \item
+  \item
+  \item
+  \item
+\end{itemize}
 
 	\section{Appendices}
 	

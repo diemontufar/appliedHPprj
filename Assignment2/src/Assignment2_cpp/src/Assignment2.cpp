@@ -8,7 +8,7 @@
 //
 // Problem:	rho C dphi/dt = -k Grad^2 phi
 //
-// Method:		Finite Element Method with linear 2D triangular elements
+// Method:		Finite Element Method with linear 3D tetrahedron elements
 //				and Implicit Euler Method and Conjugate Gradient Method
 //
 // Compilation:	g++ Assignment2.cpp -o Assignment2
