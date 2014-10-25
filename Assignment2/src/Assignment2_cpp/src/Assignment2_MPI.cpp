@@ -13,7 +13,7 @@
 //
 // Compilation:	mpicxx Assignment2_MPI.cpp -o Assignment2_MPI.exe
 //
-// Execution:	./Assignment2_MPI /grids/box/Box.grid
+// Execution:	./Assignment2_MPI {here_put_your_path}/Box.grid
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -31,20 +31,20 @@
 using namespace std;
 
 // Global variables
-const double t_min 	= 0.00;
-const double t_max 	= 100.00;
+const double t_min 		= 0.00;
+const double t_max 		= 100.00;
 const double Delta_t 	= 0.1;
 
 const double rho 		= 8954.00;
-const double C 		= 380.00;
-const double k 		= 386.00;
-const double h 		= 100.00;
+const double C 			= 380.00;
+const double k 			= 386.00;
+const double h 			= 100.00;
 const double Tair 		= 300.00;
 const double Qcpu 		= 40000.00;
 
 const int N_t 			= static_cast<int>((t_max - t_min) / Delta_t + 1);
-double* buffer 			= NULL; //Added
-int bufferSize 			= 0; //Added
+double* buffer 			= NULL; 
+int bufferSize 			= 0; 
 
 // Function declarations
 void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, Boundary*& Boundaries, int& myN_p, int& myN_f, int& myN_e, int& myN_b, bool*& yourPoints, int myID);
@@ -61,15 +61,15 @@ int     main(int argc, char** argv)
     int**			Faces		= NULL;
     int**			Elements	= NULL;
     Boundary*		Boundaries	= NULL;
-    bool*			yourPoints	= NULL; //Added
-    double*			buffer		= NULL; //Added
-    int				myN_p		= 0; //Changed
-    int				myN_f		= 0; //Changed
-    int				myN_e		= 0; //Changed
-    int				myN_b		= 0; //Changed
-    int				myID		= 0; //Added
-    int				N_Procs		= 0; //Added
-	double			wtime; //Added
+    bool*			yourPoints	= NULL; 
+    double*			buffer		= NULL; 
+    int				myN_p		= 0; 
+    int				myN_f		= 0; 
+    int				myN_e		= 0; 
+    int				myN_b		= 0; 
+    int				myID		= 0; 
+    int				N_Procs		= 0; 
+	double			wtime; 
     int			N_Threads	= omp_get_max_threads();
 
 
@@ -103,7 +103,7 @@ int     main(int argc, char** argv)
 
     if(myID==0)
 	{
-		wtime	= MPI_Wtime(); //Added
+		wtime	= MPI_Wtime(); 
 	}
 
     // Set initial condition
@@ -112,15 +112,15 @@ int     main(int argc, char** argv)
         phi[m]	= 300;
     }
 
-    assembleSystem(M, K, s, phi, Free, Fixed, Points, Faces, Elements, Boundaries, myN_p, myN_f, myN_e, myN_b, myID); //Changed
+    assembleSystem(M, K, s, phi, Free, Fixed, Points, Faces, Elements, Boundaries, myN_p, myN_f, myN_e, myN_b, myID); 
 
     A = M;
     A.subtract(Delta_t, K); // At this point we have A = M-Delta_t*K
 
     // Compute the column vector to subtract from the right hand side to take account of fixed nodes
     A.multiply(AphiFixed, phi, Free, Fixed);
-    exchangeData(AphiFixed, Boundaries, myN_b); //Added
-    exchangeData(s, Boundaries, myN_b); //Added
+    exchangeData(AphiFixed, Boundaries, myN_b); 
+    exchangeData(s, Boundaries, myN_b); 
 
     writeData(phi, Points, Elements, myN_p, myN_e, 0, myID);
 
@@ -155,9 +155,9 @@ int     main(int argc, char** argv)
 	{
 		wtime	= MPI_Wtime() - wtime;	// Record the end time and calculate elapsed time
 		cout << "Simulation took " << wtime << " seconds with " << N_Procs << " processes and " << N_Threads << " Threads" << endl;
-	} //Added
+	} 
 
-    MPI_Buffer_detach(&buffer, &bufferSize); //Added
+    MPI_Buffer_detach(&buffer, &bufferSize); 
 
     // Deallocate arrays
     for(int boundary=0; boundary<myN_b; boundary++)
@@ -188,11 +188,11 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
 {
     fstream		file;
     string      temp;
-    char		myFileName[128]; //Added
-    int			myMaxN_sp	= 0;//Added
-    int			myMaxN_sb	= 0;//Added
-    int			maxN_sp		= 0;//Added
-    int			yourID		= 0;//Added
+    char		myFileName[128]; 
+    int			myMaxN_sp	= 0;
+    int			myMaxN_sb	= 0;
+    int			maxN_sp		= 0;
+    int			yourID		= 0;
 
     if(myID==0)
 	{
@@ -559,7 +559,7 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 
     // Compute the initial residual
 	A.multiply(Aphi, phi, Free, Free);
-	exchangeData(Aphi, Boundaries, myN_b); //Added
+	exchangeData(Aphi, Boundaries, myN_b); 
     #pragma omp parallel for default(none) shared(N_row, Free, r_old, b, Aphi, d)
     for(m=0; m<N_row; m++)
     {

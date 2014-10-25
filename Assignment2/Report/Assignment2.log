@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9) (preloaded format=pdflatex 2014.10.7)  25 OCT 2014 11:51
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9) (preloaded format=pdflatex 2014.10.7)  25 OCT 2014 15:31
 entering extended mode
 **Assignment2.tex
 
@@ -672,22 +672,32 @@ File: sink-MPI/heatSink_mpi_ts99.png Graphic file (type png)
 Package pdftex.def Info: sink-MPI/heatSink_mpi_ts99.png used on input line 1185
 .
 (pdftex.def)             Requested size: 290.58786pt x 207.1756pt.
- [27 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/sink-MPI/heatSink_mpi_ts99.png>]
+
+Underfull \hbox (badness 10000) in paragraph at lines 1193--1196
+
+ []
+
+[27 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP
+/appliedHPprj/Assignment2/Report/sink-MPI/heatSink_mpi_ts99.png>]
 <HybridArchitecture.png, id=112, 709.2096pt x 527.0892pt>
 File: HybridArchitecture.png Graphic file (type png)
 
 <use HybridArchitecture.png>
 Package pdftex.def Info: HybridArchitecture.png used on input line 1198.
 (pdftex.def)             Requested size: 425.52904pt x 316.25597pt.
- [28 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/HybridArchitecture.png>]
-Overfull \hbox (2.30807pt too wide) in paragraph at lines 1241--1242
+
+Underfull \hbox (badness 10000) in paragraph at lines 1204--1207
+
+ []
+
+[28 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP
+/appliedHPprj/Assignment2/Report/HybridArchitecture.png>]
+Overfull \hbox (2.30807pt too wide) in paragraph at lines 1252--1253
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 
-Overfull \hbox (38.30844pt too wide) in paragraph at lines 1248--1249
+Overfull \hbox (38.30844pt too wide) in paragraph at lines 1259--1260
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ] 
  []
@@ -696,112 +706,111 @@ Overfull \hbox (38.30844pt too wide) in paragraph at lines 1248--1249
 File: matlab-results/1.png Graphic file (type png)
 
 <use matlab-results/1.png>
-Package pdftex.def Info: matlab-results/1.png used on input line 1306.
+Package pdftex.def Info: matlab-results/1.png used on input line 1317.
 (pdftex.def)             Requested size: 240.14659pt x 213.42181pt.
 
 <matlab-results/2.png, id=121, 478.78876pt x 422.32782pt>
 File: matlab-results/2.png Graphic file (type png)
 
 <use matlab-results/2.png>
-Package pdftex.def Info: matlab-results/2.png used on input line 1311.
+Package pdftex.def Info: matlab-results/2.png used on input line 1322.
 (pdftex.def)             Requested size: 239.39378pt x 211.16339pt.
-
-<matlab-results/3.png, id=122, 478.03593pt x 426.09187pt>
+ [30]
+<matlab-results/3.png, id=125, 478.03593pt x 426.09187pt>
 File: matlab-results/3.png Graphic file (type png)
 
 <use matlab-results/3.png>
-Package pdftex.def Info: matlab-results/3.png used on input line 1316.
+Package pdftex.def Info: matlab-results/3.png used on input line 1327.
 (pdftex.def)             Requested size: 239.01738pt x 213.04541pt.
- [30 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/matlab-results/1.png>] <matlab-results/4.png,
- id=127, 476.53032pt x 423.08063pt>
+
+<matlab-results/4.png, id=126, 476.53032pt x 423.08063pt>
 File: matlab-results/4.png Graphic file (type png)
 
 <use matlab-results/4.png>
-Package pdftex.def Info: matlab-results/4.png used on input line 1321.
+Package pdftex.def Info: matlab-results/4.png used on input line 1332.
 (pdftex.def)             Requested size: 238.26457pt x 211.5398pt.
-
-<matlab-results/5.png, id=128, 479.54156pt x 421.575pt>
+ [31 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
+P/appliedHPprj/Assignment2/Report/matlab-results/1.png> <C:/Users/diogonal/Docu
+ments/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assignment2/R
+eport/matlab-results/2.png>]
+<matlab-results/5.png, id=133, 479.54156pt x 421.575pt>
 File: matlab-results/5.png Graphic file (type png)
 
 <use matlab-results/5.png>
-Package pdftex.def Info: matlab-results/5.png used on input line 1326.
+Package pdftex.def Info: matlab-results/5.png used on input line 1337.
 (pdftex.def)             Requested size: 239.77019pt x 210.78697pt.
- [31 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/matlab-results/2.png> <C:/Users/diogonal/Docu
-ments/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assignment2/R
-eport/matlab-results/3.png>]
-<matlab-results/7.png, id=135, 508.14844pt x 435.12563pt>
+
+<matlab-results/7.png, id=134, 508.14844pt x 435.12563pt>
 File: matlab-results/7.png Graphic file (type png)
 
 <use matlab-results/7.png>
-Package pdftex.def Info: matlab-results/7.png used on input line 1331.
+Package pdftex.def Info: matlab-results/7.png used on input line 1342.
 (pdftex.def)             Requested size: 254.0736pt x 217.56227pt.
  [32 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/matlab-results/4.png> <C:/Users/diogonal/Docu
+P/appliedHPprj/Assignment2/Report/matlab-results/3.png> <C:/Users/diogonal/Docu
 ments/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assignment2/R
-eport/matlab-results/5.png>]
-<box-sequential/boxSequential_ts1.png, id=141, 813.0375pt x 598.235pt>
+eport/matlab-results/4.png>]
+<box-sequential/boxSequential_ts1.png, id=140, 813.0375pt x 598.235pt>
 File: box-sequential/boxSequential_ts1.png Graphic file (type png)
 
 <use box-sequential/boxSequential_ts1.png>
 Package pdftex.def Info: box-sequential/boxSequential_ts1.png used on input lin
-e 1340.
+e 1351.
 (pdftex.def)             Requested size: 325.20924pt x 239.28975pt.
 
-<box-sequential/boxSequential_ts25.png, id=142, 801.99625pt x 599.23875pt>
+<box-sequential/boxSequential_ts25.png, id=141, 801.99625pt x 599.23875pt>
 File: box-sequential/boxSequential_ts25.png Graphic file (type png)
 
 <use box-sequential/boxSequential_ts25.png>
 Package pdftex.def Info: box-sequential/boxSequential_ts25.png used on input li
-ne 1345.
+ne 1356.
 (pdftex.def)             Requested size: 320.79282pt x 239.69125pt.
-
-<box-sequential/boxSequential_ts50.png, id=143, 790.955pt x 590.205pt>
+ [33 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
+P/appliedHPprj/Assignment2/Report/matlab-results/5.png> <C:/Users/diogonal/Docu
+ments/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assignment2/R
+eport/matlab-results/7.png>]
+<box-sequential/boxSequential_ts50.png, id=147, 790.955pt x 590.205pt>
 File: box-sequential/boxSequential_ts50.png Graphic file (type png)
 
 <use box-sequential/boxSequential_ts50.png>
 Package pdftex.def Info: box-sequential/boxSequential_ts50.png used on input li
-ne 1350.
+ne 1361.
 (pdftex.def)             Requested size: 316.3764pt x 236.0778pt.
- [33 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/matlab-results/7.png> <C:/Users/diogonal/Docu
-ments/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assignment2/R
-eport/box-sequential/boxSequential_ts1.png>]
+
 <box-sequential/boxSequential_ts75.png, id=148, 791.95876pt x 595.22375pt>
 File: box-sequential/boxSequential_ts75.png Graphic file (type png)
 
 <use box-sequential/boxSequential_ts75.png>
 Package pdftex.def Info: box-sequential/boxSequential_ts75.png used on input li
-ne 1355.
+ne 1366.
 (pdftex.def)             Requested size: 316.7779pt x 238.08528pt.
-
-<box-sequential/boxSequential_ts100.png, id=149, 783.92876pt x 593.21625pt>
+ [34 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
+P/appliedHPprj/Assignment2/Report/box-sequential/boxSequential_ts1.png> <C:/Use
+rs/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPp
+rj/Assignment2/Report/box-sequential/boxSequential_ts25.png>]
+<box-sequential/boxSequential_ts100.png, id=152, 783.92876pt x 593.21625pt>
 File: box-sequential/boxSequential_ts100.png Graphic file (type png)
 
 <use box-sequential/boxSequential_ts100.png>
 Package pdftex.def Info: box-sequential/boxSequential_ts100.png used on input l
-ine 1360.
+ine 1371.
 (pdftex.def)             Requested size: 313.56595pt x 237.28229pt.
- [34 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/box-sequential/boxSequential_ts25.png> <C:/Us
-ers/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHP
-prj/Assignment2/Report/box-sequential/boxSequential_ts50.png>]
+
 <box-sequential/box3dview.png, id=153, 883.3pt x 733.74126pt>
 File: box-sequential/box3dview.png Graphic file (type png)
 
 <use box-sequential/box3dview.png>
-Package pdftex.def Info: box-sequential/box3dview.png used on input line 1365.
+Package pdftex.def Info: box-sequential/box3dview.png used on input line 1376.
 (pdftex.def)             Requested size: 264.99205pt x 220.12407pt.
  [35 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/box-sequential/boxSequential_ts75.png> <C:/Us
+P/appliedHPprj/Assignment2/Report/box-sequential/boxSequential_ts50.png> <C:/Us
 ers/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHP
-prj/Assignment2/Report/box-sequential/boxSequential_ts100.png>]
+prj/Assignment2/Report/box-sequential/boxSequential_ts75.png>]
 <sink-MPI/heatSink_mpi_ts1.png, id=157, 1042.89626pt x 655.44875pt>
 File: sink-MPI/heatSink_mpi_ts1.png Graphic file (type png)
 
 <use sink-MPI/heatSink_mpi_ts1.png>
-Package pdftex.def Info: sink-MPI/heatSink_mpi_ts1.png used on input line 1373.
+Package pdftex.def Info: sink-MPI/heatSink_mpi_ts1.png used on input line 1384.
 
 (pdftex.def)             Requested size: 312.87129pt x 196.63614pt.
 
@@ -809,38 +818,41 @@ Package pdftex.def Info: sink-MPI/heatSink_mpi_ts1.png used on input line 1373.
 File: sink-MPI/heatSink_mpi_ts25.png Graphic file (type png)
 
 <use sink-MPI/heatSink_mpi_ts25.png>
-Package pdftex.def Info: sink-MPI/heatSink_mpi_ts25.png used on input line 1378
+Package pdftex.def Info: sink-MPI/heatSink_mpi_ts25.png used on input line 1389
 .
 (pdftex.def)             Requested size: 292.69576pt x 194.82938pt.
-
-<sink-MPI/heatSink_mpi_ts50.png, id=159, 980.66376pt x 654.445pt>
+ [36 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
+P/appliedHPprj/Assignment2/Report/box-sequential/boxSequential_ts100.png> <C:/U
+sers/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedH
+Pprj/Assignment2/Report/box-sequential/box3dview.png>] <sink-MPI/heatSink_mpi_t
+s50.png, id=162, 980.66376pt x 654.445pt>
 File: sink-MPI/heatSink_mpi_ts50.png Graphic file (type png)
 
 <use sink-MPI/heatSink_mpi_ts50.png>
-Package pdftex.def Info: sink-MPI/heatSink_mpi_ts50.png used on input line 1383
+Package pdftex.def Info: sink-MPI/heatSink_mpi_ts50.png used on input line 1394
 .
 (pdftex.def)             Requested size: 294.2014pt x 196.335pt.
- [36 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
-P/appliedHPprj/Assignment2/Report/box-sequential/box3dview.png> <C:/Users/diogo
-nal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assig
-nment2/Report/sink-MPI/heatSink_mpi_ts1.png>] <sink-MPI/heatSink_mpi_ts75.png, 
-id=163, 1006.76125pt x 660.4675pt>
+
+<sink-MPI/heatSink_mpi_ts75.png, id=163, 1006.76125pt x 660.4675pt>
 File: sink-MPI/heatSink_mpi_ts75.png Graphic file (type png)
 
 <use sink-MPI/heatSink_mpi_ts75.png>
-Package pdftex.def Info: sink-MPI/heatSink_mpi_ts75.png used on input line 1388
+Package pdftex.def Info: sink-MPI/heatSink_mpi_ts75.png used on input line 1399
 .
 (pdftex.def)             Requested size: 302.0307pt x 198.14177pt.
+ [37 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
+P/appliedHPprj/Assignment2/Report/sink-MPI/heatSink_mpi_ts1.png> <C:/Users/diog
+onal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assi
+gnment2/Report/sink-MPI/heatSink_mpi_ts25.png>]
 File: sink-MPI/heatSink_mpi_ts99.png Graphic file (type png)
  <use sink-MPI/heatSink_mpi_ts99.png>
-Package pdftex.def Info: sink-MPI/heatSink_mpi_ts99.png used on input line 1393
+Package pdftex.def Info: sink-MPI/heatSink_mpi_ts99.png used on input line 1404
 .
 (pdftex.def)             Requested size: 290.58786pt x 207.1756pt.
-
-[37 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP
-/appliedHPprj/Assignment2/Report/sink-MPI/heatSink_mpi_ts25.png> <C:/Users/diog
-onal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Assi
-gnment2/Report/sink-MPI/heatSink_mpi_ts50.png>]
+ [38 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedH
+P/appliedHPprj/Assignment2/Report/sink-MPI/heatSink_mpi_ts50.png> <C:/Users/dio
+gonal/Documents/Unimelb - Projects/Semester 2 - 2014/AppliedHP/appliedHPprj/Ass
+ignment2/Report/sink-MPI/heatSink_mpi_ts75.png>]
 ("C:\Users\diogonal\Documents\Unimelb - Projects\Semester 2 - 2014\AppliedHP\ap
 pliedHPprj\Assignment2\Report\Assignment2.bbl"
 Missing character: There is no é in font cmr12!
@@ -850,16 +862,15 @@ Underfull \hbox (badness 3407) in paragraph at lines 14--17
 p pro-gram-ming\OT1/cmr/m/n/12 , 2013, avail-able at
  []
 
-) [38 <C:/Users/diogonal/Documents/Unimelb - Projects/Semester 2 - 2014/Applied
-HP/appliedHPprj/Assignment2/Report/sink-MPI/heatSink_mpi_ts75.png>]
+) [39]
 ("C:\Users\diogonal\Documents\Unimelb - Projects\Semester 2 - 2014\AppliedHP\ap
 pliedHPprj\Assignment2\Report\Assignment2.aux") ) 
 Here is how much of TeX's memory you used:
- 5565 strings out of 493705
- 76803 string characters out of 3142143
+ 5569 strings out of 493705
+ 76841 string characters out of 3142143
  205255 words of memory out of 3000000
- 8795 multiletter control sequences out of 15000+200000
- 13390 words of font info for 49 fonts, out of 3000000 for 9000
+ 8797 multiletter control sequences out of 15000+200000
+ 14091 words of font info for 51 fonts, out of 3000000 for 9000
  1025 hyphenation exceptions out of 8191
  36i,14n,58p,1022b,1560s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Program Files (x86)/MiKTeX
@@ -881,9 +892,9 @@ fb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb
 :/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti12.pfb><C:/
 Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmtt12.pfb><C:/Pr
 ogram Files (x86)/MiKTeX 2.9/fonts/type1/urw/courier/ucrr8a.pfb>
-Output written on Assignment2.pdf (38 pages, 1401961 bytes).
+Output written on Assignment2.pdf (39 pages, 1404645 bytes).
 PDF statistics:
- 230 PDF objects out of 1000 (max. 8388607)
+ 233 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  111 words of extra memory for PDF output out of 10000 (max. 10000000)
 

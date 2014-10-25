@@ -98,8 +98,6 @@ int     main(int argc, char** argv)
     // Compute the column vector to subtract from the right hand side to take account of fixed nodes
     A.multiply(AphiFixed, phi, Free, Fixed);
 
-    //file.open("Assignment2.data", ios::out);
-    //write(file, phi, N_p);
     writeData(phi, Points, Elements, N_p, N_e, 0);
 
     // Time marching loop
@@ -119,13 +117,10 @@ int     main(int argc, char** argv)
         solve(A, phi, b, Free, Fixed);
 
         // Write the solution
-    //    write(file, phi, N_p);
         if (l%10==0){
            writeData(phi, Points, Elements, N_p, N_e, (l+1));
         }
     }
-
-    //file.close();
 
     // Deallocate arrays
     for(int boundary=0; boundary<N_b; boundary++)
@@ -206,7 +201,7 @@ void	read(char* filename, double**& Points, int**& Faces, int**& Elements, Bound
     file >> temp;
     for(int e=0; e<N_e; e++)
     {
-        file >> Elements[e][0] >> Elements[e][1] >> Elements[e][2] >> Elements[e][3]; //Change it! added: Elements[e][3]
+        file >> Elements[e][0] >> Elements[e][1] >> Elements[e][2] >> Elements[e][3]; 
     }
 
     file >> temp;
@@ -395,7 +390,6 @@ void	assemble(SparseMatrix& M, SparseMatrix& K, double* s, double* phi, bool* Fr
                 M(m,n)	   += rho*C*M_e[p][q]*Omega[e]/20;
                 K(m,n)	   -= k*(gradEta_p[0]*gradEta_q[0]+gradEta_p[1]*gradEta_q[1]+gradEta_p[2]*gradEta_q[2])*Omega[e];
             }
-            //s[m]		   += s_e[p]*psi*Omega[e]/3;
         }
     }
 

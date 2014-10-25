@@ -29,7 +29,7 @@
 \begin{document}
 
 	\title{Finite Element Method for The Heat equation}
-	\author{Andres Chaves(), Diego Montufar(661608)}
+	\author{Andres Chaves(706801), Diego Montufar(661608)}
 	
 	\maketitle
 	
@@ -1218,7 +1218,7 @@ for(int m=0; m<myN_p; m++)
 ...
 \end{lstlisting}
 
-As we can see \textit{after} exchanging the boundary values between processes we create a team of parallel threads with the \textit{pragma omp parallel for} outside the for loop where the \textbf{b} array is assembled. The \textit{myN_p,b,s,AphiFixed} variables will be shared by all the threads.
+As we can see \textit{after} exchanging the boundary values between processes we create a team of parallel threads with the \textit{pragma omp parallel for} outside the for loop where the \textbf{b} array is assembled. The $\textit{myN\_p,b,s,AphiFixed}$ variables will be shared by all the threads.
 
 \begin{lstlisting}[style=MyC++Style]
 // Compute the initial residual
@@ -1233,7 +1233,7 @@ for(m=0; m<N_row; m++){
 }
 
 // Solve the linear system
-solve(A, phi, b, Free, Fixed, Boundaries, yourPoints, myN_b, myID);//Changed
+solve(A, phi, b, Free, Fixed, Boundaries, yourPoints, myN_b, myID);
 ...
 \end{lstlisting}
 
@@ -1286,7 +1286,7 @@ Then we make the call to the \textit{solve} method where we are going to solve o
 }
 \end{lstlisting}
 
-Finally, the last part where we can add multithreading is the \textit{innerProduct} method. This method computes the inner product of the parameter arrays v1 and v2, so that a private copy the \textit{myInnerProduct} array variable is created for each thread using the reduction clause, the reduction variable is applied to all private copies of the shared variable, and at the end the final result is written to the global shared variable.
+Finally, the last part where we can add multithreading is the \textit{innerProduct} method. This method computes the inner product of the parameter arrays v1 and v2, so that a private copy of the \textit{myInnerProduct} array variable is created for each thread using the reduction clause, the reduction variable is applied to all private copies of the shared variable, and at the end the final result is written to the global shared variable.
 
 \begin{lstlisting}[style=MyC++Style]
 #pragma omp parallel for default(none) 
