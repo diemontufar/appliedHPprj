@@ -142,7 +142,7 @@ int     main(int argc, char** argv)
         } // b = M*phi^l + Delta_t*s - A_free,fixed*phi_fixed
 
         // Solve the linear system
-        solve(A, phi, b, Free, Fixed, Boundaries, yourPoints, myN_b, myID);//Changed
+        solve(A, phi, b, Free, Fixed, Boundaries, yourPoints, myN_b, myID);
 
         // Write the solution
         if(l%10==0)
@@ -188,7 +188,7 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
 {
     fstream		file;
     string      temp;
-    char		myFileName[64]; //Added
+    char		myFileName[128]; //Added
     int			myMaxN_sp	= 0;//Added
     int			myMaxN_sb	= 0;//Added
     int			maxN_sp		= 0;//Added
@@ -227,7 +227,7 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
     {
         Elements[e] = &Elements[0][ee];
     }
-    memset(yourPoints, true, myN_p*sizeof(bool));
+    memset(yourPoints, false, myN_p*sizeof(bool));
 
     file >> temp;
     for(int p=0; p<myN_p; p++)
@@ -266,7 +266,7 @@ void	readData(char* filename, double**& Points, int**& Faces, int**& Elements, B
 			{
 				for(int p=0; p<Boundaries[b].N_; p++)
 				{
-					yourPoints[Boundaries[b].indices_[p]]	= false;
+					yourPoints[Boundaries[b].indices_[p]]	= true;
 				}
 			}
 		}
@@ -580,7 +580,8 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 		exchangeData(Ad, Boundaries, myN_b);
 		dTAd	= computeInnerProduct(d, Ad, Free, yourPoints, N_row);
 		alpha  	= r_oldTr_old/dTAd;
-                #pragma omp parallel for default(none) shared(N_row, Free, phi, alpha, d)
+        
+		#pragma omp parallel for default(none) shared(N_row, Free, phi, alpha, d)
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -588,7 +589,8 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 				phi[m] += alpha*d[m];
 			}
 		}
-                #pragma omp parallel for default(none) shared(N_row, Free, r, r_old, alpha, Ad)
+        
+		#pragma omp parallel for default(none) shared(N_row, Free, r, r_old, alpha, Ad)
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -598,7 +600,8 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 		}
 		rTr	= computeInnerProduct(r, r, Free, yourPoints, N_row);
 		beta  	= rTr/r_oldTr_old;
-                #pragma omp parallel for default(none) shared(N_row, Free, d, r, beta )
+        
+		#pragma omp parallel for default(none) shared(N_row, Free, d, r, beta )
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -606,7 +609,8 @@ void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, Bou
 				d[m] = r[m] + beta*d[m];
 			}
 		}
-                #pragma omp parallel for default(none) shared (N_row, Free, r_old, r)
+        
+		#pragma omp parallel for default(none) shared (N_row, Free, r_old, r)
 		for(m=0; m<N_row; m++)
 		{
 			if(Free[m])
@@ -637,7 +641,7 @@ double	computeInnerProduct(double* v1, double* v2, bool* Free, bool* yourPoints,
 	double		myInnerProduct	= 0.0;
 	double		innerProduct	= 0.0;
 
-        #pragma omp parallel for default(none) shared(N_row, Free, yourPoints, v1,v2) reduction (+:myInnerProduct)
+    #pragma omp parallel for default(none) shared(N_row, Free, yourPoints, v1,v2) reduction (+:myInnerProduct)
 	for(int m=0; m<N_row; m++)
 	{
 		if(Free[m] && !yourPoints[m])

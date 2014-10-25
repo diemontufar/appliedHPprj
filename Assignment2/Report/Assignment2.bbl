@@ -8,6 +8,16 @@
 \begin{thebibliography}{1}
 
 \bibitem{Steve13}
-S.~Moore, \emph{Applied numerical methods},  (2014), 279--332, 408--422.
+S.~Moore, \emph{Applied numerical methods}, 2014.
+
+\bibitem{HybridP}
+P.~Wautelet P.Fr.~Lavallée, \emph{Hybrid mpi-openmp programming}, 2013,
+  available at
+  $\texttt{http://www.idris.fr/data/cours/hybride/form\_hybride\_en\_proj.pdf}$.
+
+\bibitem{Sayas}
+J.~Sayas, \emph{A gentle introduction to the finite element method}, preprint
+  (2008), available at
+  \texttt{http://www.imati.cnr.it/marini/didattica/Metodi-engl/Intro2FEM.pdf}.
 
 \end{thebibliography}

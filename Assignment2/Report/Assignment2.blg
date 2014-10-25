@@ -1,5 +1,7 @@
 This is BibTeX, Version 0.99dThe top-level auxiliary file: Assignment2.aux
 The style file: amsplain.bst
 Database file #1: references.bib
-Warning--missing journal name in Steve13
-(There was 1 warning)
+Warning--entry type for "HybridP" isn't style-file defined
+--line 23 of file references.bib
+Warning--missing publisher in Steve13
+(There were 2 warnings)

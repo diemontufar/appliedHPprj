@@ -6,36 +6,49 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Discretization of the domain into finite elements}{3}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Shape functions}{4}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Derive element matrices for the System}{7}}
+\citation{Sayas}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Assemble}{11}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Apply Boundary conditions}{11}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Problem Solution and Implementation}{11}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Matlab and C++ implementation}{11}}
 \citation{Steve13}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Figure (1.a) Heat flux trough an unstructured Box grid using linear tetrahedral elements. Figure (1.b) Maximum temperature after 100s}}{19}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textit  {(a) Heat flux trough an unstructured Box grid using linear tetrahedral elements. (b) Maximum temperature after 100s}}}{19}}
 \newlabel{fig:matlab1}{{1}{19}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Parallel MPI C++ implementation}{20}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Hybrid openMP and MPI implementation}{20}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{20}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Results}{20}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Appendices}{20}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Initial state of Temperature}}{20}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Temperature after 25 time step}}{21}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Temperature after 50 time steps}}{21}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Temperature after 75 time steps}}{22}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Temperature after 100 time steps}}{22}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Temperature after 100 time steps, 3D Box perspective}}{23}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Initial state of Temperature}}{23}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Temperature after 25 time step}}{24}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Temperature after 50 time steps}}{24}}
-\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Temperature after 75 time steps}}{25}}
-\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Temperature after 100 time steps}}{25}}
-\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Temperature after 100 time steps, 3D Box perspective}}{26}}
-\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Initial state of Temperature}}{26}}
-\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Temperature after 25 time step}}{27}}
-\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Temperature after 50 time steps}}{27}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Parallel MPI C++ implementation}{22}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textit  {(a). A schematic of the partitioned 3D problem domain for the Heat equation with a Box grid. (b). Portions of the grid that are mapped to each process, for this illustration we show 4 of the N processes that the Box grid could be divided}}}{22}}
+\newlabel{fig:boxpartition}{{2}{22}}
+\citation{Steve13}
+\citation{Steve13}
+\citation{Steve13}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textit  {Simulation results in Paraview with the output of the parallel MPI version of the code with 8 processes with an unstructured grid of a CPU sink}}}{27}}
+\newlabel{fig:sink}{{3}{27}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Hybrid openMP and MPI implementation}{27}}
+\citation{HybridP}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textit  {Hybrid Architecture}}}{28}}
+\newlabel{fig:hybridarch}{{4}{28}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{30}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Results}{30}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Appendices}{30}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Initial state of Temperature}}{30}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Temperature after 25 time step}}{31}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Temperature after 50 time steps}}{31}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Temperature after 75 time steps}}{32}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Temperature after 100 time steps}}{32}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Temperature after 100 time steps, 3D Box perspective}}{33}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Initial state of Temperature}}{33}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Temperature after 25 time step}}{34}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Temperature after 50 time steps}}{34}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Temperature after 75 time steps}}{35}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Temperature after 100 time steps}}{35}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Temperature after 100 time steps, 3D Box perspective}}{36}}
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Initial state of Temperature}}{36}}
+\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Temperature after 25 time step}}{37}}
+\@writefile{lof}{\contentsline {figure}{\numberline {19}{\ignorespaces Temperature after 50 time steps}}{37}}
 \bibstyle{amsplain}
 \bibdata{references}
 \bibcite{Steve13}{1}
-\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Temperature after 75 time steps}}{28}}
-\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Temperature after 100 time steps}}{28}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}References}{28}}
+\bibcite{HybridP}{2}
+\bibcite{Sayas}{3}
+\@writefile{lof}{\contentsline {figure}{\numberline {20}{\ignorespaces Temperature after 75 time steps}}{38}}
+\@writefile{lof}{\contentsline {figure}{\numberline {21}{\ignorespaces Temperature after 100 time steps}}{38}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}References}{38}}

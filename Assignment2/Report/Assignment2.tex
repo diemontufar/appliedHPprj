@@ -17,6 +17,9 @@
 \newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
 \usepackage{xcolor}
 \usepackage{listings}
+
+\usepackage{etoolbox}
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
  
 % Copied from the listings documentation
 \lstdefinestyle{MyFrame}{backgroundcolor=\color{yellow},frame=shadowbox}
@@ -421,6 +424,11 @@ So we can write the contribution to our load vector as:
 \end{equation}
 
 \subsection{Assemble}
+
+There is however the trick question on how to compute all the integrals that appear in the matrix and right hand side of the
+system. This is done by a process called assembly of the system, another 'ingredient' of the many good deeds of the Finite element method. \cite{Sayas}
+
+When we think about how we assemble M , K, and s with the Finite Element method, we loop over all of the elements and for each element loop over all of the nodes that a given element uses, adding in terms to M , K, and s in the rows and columns corresponding to those nodes.
 
 \subsection{Apply Boundary conditions}
 
@@ -838,7 +846,7 @@ If we want to show the results in Matlab, we can do it by updating a Figure insi
 
 \begin{figure}[h!]
     \includegraphics[scale=0.6]{matlab1}
-    \caption{Figure (1.a) Heat flux trough an unstructured Box grid using linear tetrahedral elements. Figure (1.b) Maximum temperature after 100s}
+    \caption{\textit{(a) Heat flux trough an unstructured Box grid using linear tetrahedral elements. (b) Maximum temperature after 100s}}
     \label{fig:matlab1}
 \end{figure}
 
@@ -872,29 +880,435 @@ For our c++ version the time marching loop will be a little bit more complex sin
 25.}
 \end{lstlisting}
 
+In order to make the necessary computation as simple as possible the first member function that we are going to add will overload the = operator so that we can have the line of code A=M; in our program and the resulting function call will
+copy all of the data stored in the $\texttt{val\_}$, $\texttt{col\_}$, $\texttt{row\_}$, arrays, etc. A similar computation is performed in \textit{Line 2}, where internally the \textit{SparseMatrix} class will handle all the memory allocation, operations and method calls in order to perform the subtract operation. At this point Following the use of the =
+and the subtract functions we will have the correctly assembled the matrix $A$. The next step is to compute the column vector to subtract from the right hand side to take account of fixed nodes, for that we will perform a matrix vector multiplication,
+taking as an input a 1D array defining the vector that the matrix should be multiplied by, and a vector that is the output of the matrix vector multiplication (\textit{Line 6}).
+\\\\
+What we can see in \textit{Line 8} is the \textit{writeData} method, which in this case will be printing the initial state of the system using the grid structure as well as the Points, Elements and the Temperature changes into vtk files in order to visualize the results in Praview. We are not going to discuss the structure of this method as we consider this is not so relevant because is used only for visualization and as we'll see later, it will be omitted for performance purposes. However, the code inside looks fairly simple and the only thing to take account of is that we have to follow the corresponding vtk file structure defined for our linear tetrahedron elements.
+\\\\
+Now let's move on to the time marching loop, After the first multiply statement, the 1D array \textbf{b} will contain the
+matrix vector product $M\phi^{l}$, then after the for loop $M\phi^{l}+\Delta t s$ With this array evaluated for any given time step, we call the solve function, which will look like:
 
+\begin{lstlisting}[style=MyC++Style] 
+...
+// Compute the initial residual
+A.multiply(Aphi, phi, Free, Free);
+for(m=0; m<N_row; m++){
+	if(Free[m]){
+		r_old[m]	= b[m] - Aphi[m];
+		d[m]		= r_old[m];
+		r_oldTr_old+= r_old[m]*r_old[m];
+	}
+}
+r_norm = sqrt(r_oldTr_old);
 
+// Conjugate Gradient iterative loop
+while(r_norm>tolerance && k<N_k){
+	dTAd	= 0.0;
+	A.multiply(Ad, d, Free, Free);
+	for(m=0; m<N_row; m++){
+		if(Free[m]){
+			dTAd   += d[m]*Ad[m];
+		}
+	}
+	alpha  	= r_oldTr_old/dTAd;
+	for(m=0; m<N_row; m++){
+		if(Free[m]){
+			phi[m] += alpha*d[m];
+		}
+	}
+	for(m=0; m<N_row; m++){
+		if(Free[m]){
+			r[m]	= r_old[m] - alpha*Ad[m];
+		}
+	}
+	rTr	= 0.0;
+	for(m=0; m<N_row; m++){
+		if(Free[m]){
+			rTr  += r[m]*r[m];
+		}
+	}
+	beta  	= rTr/r_oldTr_old;
+	for(m=0; m<N_row; m++){
+		if(Free[m]){
+			d[m] = r[m] + beta*d[m];
+		}
+	}
+	for(m=0; m<N_row; m++){
+		if(Free[m]){
+			r_old[m] = r[m];
+		}
+	}
+	r_oldTr_old	= rTr;
+	r_norm		= sqrt(rTr);
+	k++;
+}
+...
+return;
+\end{lstlisting}
+
+The complete program is given in Assignment2.cpp. \textbf{APPENDIX B} illustrates the solution at a number of different time steps. It can be observed that as time progresses constant flux of heat on the bottom of the Box moves through
+the domain (due to the convective term) and continues heating the rest of it until 100s.
 
 \subsection{Parallel MPI C++ implementation}
+Now we are going to go through the MPI version of our c++ code. Again we took as reference the implementation of the given code in \textit{Example21-4.cpp} and \textit{Tutorial6.cpp} which solve the generic 2D scalar transport equation with MPI. For this part we are not going to use the concept of ghost cells in our parallel computation like the first assignment instead each process will be responsible for a unique set of points where each process will have a local numbering of its Points, Faces, and Elements arrays, but there will also be an implicit global numbering. To do this we will break up our unstructured grid to assign the elements to each process as shown in Figure \ref{fig:boxpartition}. In this case, the solution at a point on the boundary between two grids will be computed by each process sharing that point. Thus for the points that are shared between processes we are going to define a new type of boundary condition called an interprocess boundary condition.
+
+	\begin{figure}[H]
+    \includegraphics[scale=0.5]{Box.png}
+    \centering
+    \caption{\textit{(a). A schematic of the partitioned 3D problem domain for the Heat equation with a Box grid. (b). Portions of the grid that are mapped to each process, for this illustration we show 4 of the N processes that the Box grid could be divided}}
+    \label{fig:boxpartition}
+	\end{figure}	
+
+For this part we are going to assume that we already have the grid files perfectly defined and ready to be processed. The only difference is that now we will have one grid file per process, and each process will 'work' with its own part of the data and will have its unique set of elements sharing with other processes only the configured interprocess data defined at the end of those files.
+\\\\
+So, although the elements are uniquely assigned to a process, certain points on the boundaries between processes will be
+duplicated and we can avoid this by the concept of ownership. That is although a face is shared between two cells, we pick one of those cells to be the 'owner' of the face and one to be the 'neighbour' of the face. Here will be assigning one of the two processes sharing the interprocess points to be the owner of them.
+\\\\
+From here we are going to modify some methods of the original c++ sequential version of the program, so in fact we firstly will do so with our \textit{readData} method. The only thing that is going to change is the definition of the interprocess boundaries which can be done as follows:
+
+\begin{lstlisting}[style=MyC++Style] 
+...
+for(int b=0; b<myN_b; b++){
+	file >> Boundaries[b].name_ >> Boundaries[b].type_ >> Boundaries[b].N_;
+	Boundaries[b].indices_  = new int [Boundaries[b].N_];
+	for(int n=0; n<Boundaries[b].N_; n++){
+		file >> Boundaries[b].indices_[n];
+	}
+	file >> Boundaries[b].value_;
+	if(Boundaries[b].type_=="interprocess"){
+		myMaxN_sb++;
+		myMaxN_sp	= max(myMaxN_sp, Boundaries[b].N_);
+		yourID		= static_cast<int> (Boundaries[b].value_);
+		if(yourID>myID)
+		{
+			for(int p=0; p<Boundaries[b].N_; p++){
+				yourPoints[Boundaries[b].indices_[p]]	= true;
+			}
+		}
+	}
+}
+
+MPI_Allreduce(&myMaxN_sp, &maxN_sp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+buffer		= new double [maxN_sp];
+bufferSize	= (maxN_sp*sizeof(double)+MPI_BSEND_OVERHEAD)*myMaxN_sb;
+MPI_Buffer_attach(new char[bufferSize] , bufferSize);
+...
+\end{lstlisting}
+
+As we can see in the code we are looping over the interprocess boundary definitions in the file, we have declared
+a variables $\texttt{myMaxN\_sp}$, which is an integer variable storing the maximum number of shared points on any given interprocess boundary, and $\texttt{myMaxN\_sp}$ , which is an integer storing the number of interprocess boundaries that a given process has. This will be used in order to allocate a buffer array to use in the MPI send and receive routines. Then as mentioned before, we assign ownership to the process with the highest rank and therefore set the corresponding entries in the \textit{yourPoints} array equal to "true". Finally, after having read in the file, we will make sure that every process has the same global value for $\texttt{myMaxN\_sp}$ by using the $MPI\_Allreduce$ function, then we will allocate the buffer for MPI to store data until it can be exchanged.
+\\\\
+At this point, the next step is the assembling of the mass and stiffness matrices. As it happens we don't need to modify our code for this at all and so the assemble function will be exactly the same as our sequential version of the program.
+\\\\
+So, when each process comes to solving its system of equations at each time step, the equations for each shared point will be missing some terms and if we want our algorithm to work, we need to share this data in order to make sure that the shared point equations are the same on each process \cite{Steve13}. In order to illustrate how we make this work, let's imagine that we have just completed the execution of the assemble function and we have the incomplete M and K, and s.
+\\\\
+We will define a function called exchange that we will call repeatedly throughout the program and we will pass this a 1D
+array, representing a column vector of size $N_p$x1, which will look like:
+
+\begin{lstlisting}[style=MyC++Style] 
+void	exchangeData(double* v, Boundary* Boundaries, int myN_b)
+{
+	int			yourID		= 0;
+	int			tag			= 0;
+	MPI_Status	status;
+
+	for(int b=0; b<myN_b; b++){
+		if(Boundaries[b].type_=="interprocess")	{
+			for(int p=0; p<Boundaries[b].N_; p++){
+				buffer[p]	= v[Boundaries[b].indices_[p]];
+			}
+			yourID		= static_cast<int> (Boundaries[b].value_);
+		MPI_Bsend(buffer, Boundaries[b].N_,	MPI_DOUBLE,	yourID,	tag, MPI_COMM_WORLD);
+		}
+	}
+	for(int b=0; b<myN_b; b++){
+	if(Boundaries[b].type_=="interprocess"){
+	yourID	= static_cast<int> (Boundaries[b].value_);
+	MPI_Recv(buffer, Boundaries[b].N_,	MPI_DOUBLE,	yourID,	tag, MPI_COMM_WORLD, &status);
+		for(int p=0; p<Boundaries[b].N_; p++){
+			v[Boundaries[b].indices_[p]] += buffer[p];
+		}
+	}
+	}
+	return;
+}
+\end{lstlisting}
+
+In this method we will be going to loop over the interprocess boundaries and find which points are shared and copy that information into the buffer array that was defined in the \textit{readData} method. We will then send off this buffer to the process with whom these points are shared. We will do so with a "buffer Send" in order to avoid deadlock. So now we can use the exchange method after the calling to the assemble method, so that we ensure that $M$ and $K$ and $s$, doesn't have missing entries.
+\\\\
+Now we can move on to the time marching loop where we actually compute the solution by calling the solve method. 
+
+\begin{lstlisting}[style=MyC++Style]
+...
+A = M;
+A.subtract(Delta_t, K); // At this point we have A = M-Delta_t*K
+
+// Compute the column vector to subtract 
+//from the right hand side to take account of fixed nodes
+A.multiply(AphiFixed, phi, Free, Fixed);
+exchangeData(AphiFixed, Boundaries, myN_b); 
+exchangeData(s, Boundaries, myN_b);
+
+writeData(phi, Points, Elements, myN_p, myN_e, 0, myID);
+
+// Time marching loop
+for(int l=0; l<N_t-1; l++){
+	if(myID==0){
+		cout << "t = " << l*Delta_t;
+	}
+
+	// Assemble b
+	M.multiply(b, phi); // b = M*phi^l
+	exchangeData(b, Boundaries, myN_b);
+	#pragma omp parallel for default(none) shared(myN_p,b,s,AphiFixed)
+	for(int m=0; m<myN_p; m++){
+		b[m]	+= Delta_t*s[m] - AphiFixed[m];
+	} // b = M*phi^l + Delta_t*s - A_free,fixed*phi_fixed
+
+	// Solve the linear system
+	solve(A, phi, b, Free, Fixed, Boundaries, yourPoints, myN_b, myID);//Changed
+
+	// Write the solution
+	if(l%10==0){
+		writeData(phi, Points, Elements, myN_p, myN_e, l, myID);
+	}
+}
+
+if(myID==0){
+	// Record the end time and calculate elapsed time
+	wtime	= MPI_Wtime() - wtime;	
+	cout << "Simulation took " << wtime << " seconds with " 
+	<< N_Procs << " processes and " << N_Threads << " Threads" << endl;
+} 
+
+MPI_Buffer_detach(&buffer, &bufferSize); //Added
+
+// Deallocate arrays
+for(int boundary=0; boundary<myN_b; boundary++)
+{
+	delete [] Boundaries[boundary].indices_;
+}
+...
+MPI_Finalize();
+...
+\end{lstlisting}
+
+So, it can be observed that at this stage most of the code is the same as the serial version of the algorithm with the exception of the exchanging of the vectors s and b. We can now look at how we solve the global linear system of equations at each time step with the conjugate gradient method.
+
+\begin{lstlisting}[style=MyC++Style]
+void	solve(SparseMatrix& A, double* phi, double* b, bool* Free, bool* Fixed, 
+Boundary* Boundaries, bool* yourPoints, int myN_b, int myID)
+{
+...
+    // Compute the initial residual
+	A.multiply(Aphi, phi, Free, Free);
+	exchangeData(Aphi, Boundaries, myN_b); //Added
+    for(m=0; m<N_row; m++){
+        if(Free[m]){
+            r_old[m]	= b[m] - Aphi[m];
+            d[m]		= r_old[m];
+        }
+    }
+
+    r_oldTr_old	= computeInnerProduct(r_old, r_old, Free, yourPoints, N_row);
+    r_norm		= sqrt(r_oldTr_old);
+
+    // Conjugate Gradient iterative loop
+    while(r_norm>tolerance && k<maxIterations)
+    {
+    	A.multiply(Ad, d, Free, Free);
+		exchangeData(Ad, Boundaries, myN_b);
+		dTAd	= computeInnerProduct(d, Ad, Free, yourPoints, N_row);
+		alpha  	= r_oldTr_old/dTAd;
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				phi[m] += alpha*d[m];
+			}
+		}
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				r[m]	= r_old[m] - alpha*Ad[m];
+			}
+		}
+		rTr	= computeInnerProduct(r, r, Free, yourPoints, N_row);
+		beta  	= rTr/r_oldTr_old;
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				d[m] = r[m] + beta*d[m];
+			}
+		}
+
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				r_old[m] = r[m];
+			}
+		}
+		r_oldTr_old	= rTr;
+		r_norm		= sqrt(rTr);
+		k++;
+	}
+	...
+}
+\end{lstlisting}
+
+As we can see the exchange function is quite important here because it help us to correct possible missing entries in our global matrix system. Rather than trying to exchange the entries in the matrix itself what we do is exchange the vectors A$\phi$ and A\textbf{d}, which means less data to exchange, and much simpler code\cite{Steve13}. The next step is the computation of the residuals and the search directions. To do that we are going to use the \textit{innerProduct} function which will be responsible for computing the correct global inner products that are used to define the residual norm, $\alpha$ and $\beta$. That is because each process has a portion of the grid, then it will only have a portion of the global residual vector, but we need each process to have the correct global residual in order to use compute the same $\alpha$ and $\beta$. Otherwise the solution may not be computed correctly.
+
+\begin{lstlisting}[style=MyC++Style]
+double	computeInnerProduct(double* v1, double* v2, bool* Free, 
+bool* yourPoints, int N_row)
+{
+	double		myInnerProduct	= 0.0;
+	double		innerProduct	= 0.0;
+
+	for(int m=0; m<N_row; m++){
+		if(Free[m] && !yourPoints[m]){
+			myInnerProduct += v1[m]*v2[m];
+		}
+	}
+
+	MPI_Allreduce(&myInnerProduct, &innerProduct, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	return innerProduct;
+}
+\end{lstlisting}
+
+Here we are using the \textit{yourPoints} array in order to decide whether or not to include the values in the increment. If we didn't do this, then the shared points would be counted more than once in the computation of the residual vector (and all of the other vectors). So this is why it was important to determine the ownership of a shared point right back when reading in the grid on each process\cite{Steve13}.
+\\\\
+Finally, after each process computes its portion of the inner product we use an MPI Allreduce so that each process will have the correct global residual; and will then compute the same update for $\phi$, will then compute the correct new search
+directions, etc.
+\\\\
+In order to show the results of the MPI version of the code, it's the perfect time to test the CPU sink unstructured grid instead of the Box grid used so far only for explanation purposes. In this case we are going to run our MPI program with 8 processes and as input the grid file \textit{"CPUHeatSink\_08proc"}. The final state of the temperature is shown in Figure \ref{fig:sink} and some captures of the simulation are listed on \textbf{APPENDIX C}.
+
+	\begin{figure}[h!]
+    \includegraphics[scale=0.3]{sink-MPI/heatSink_mpi_ts99.png}
+    \centering
+    \caption{\textit{Simulation results in Paraview with the output of the parallel MPI version of the code with 8 processes with an unstructured grid of a CPU sink}}
+    \label{fig:sink}
+	\end{figure}
 
 \subsection{Hybrid openMP and MPI implementation}
 
+Hybrid parallel programming consists of mixing several parallel programming paradigms in order to benefit from the advantages of the different approaches. In general, MPI is used for communication between processes, and another paradigm (OpenMP, pthreads, etc) is used inside each process. Our final approach includes the implementation of an Hybrid c++ version of our program with the use of MPI with OpenMP.
+\\\\
+The main purpose is to exploit the strengths of both models: the efficiency, memory savings, and ease of programming of the shared-memory model and the scalability of the distributed-memory model. The advantages of this type of implementations allow us (in most of the cases) to improve speedup, but involves complexity and higher level of expertise. Also the necessity of having good MPI and OpenMP performances (Amdahl's law applies separately to the two approaches) and the total gains in performance are not guaranteed (extra additional costs)\cite{HybridP}.
 
+	\begin{figure}[h!]
+    \includegraphics[scale=0.6]{HybridArchitecture.png}
+    \centering
+    \caption{\textit{Hybrid parallel implementation with MPI and openMP}}
+    \label{fig:hybridarch}
+	\end{figure}
+	
+Figure \ref{fig:hybridarch} illustrates how an Hybrid implementation of MPI and openMP will work. As we can see this kind of parallel programs consists of cooperating processes, each with its own memory. A group of threads is executed within each process and there is interchange of data between one to another process as messages. 
+\\\\
+Now that we have an idea of what are the expected behavior of an Hybrid parallel program, it's time to go through our MPI c++ code and start adding multithreading to it. The most critical part of the code is the \textit{solve} method, given that we have more than one mpi calls when we use the exchange method, we have to make sure that the pragmas are not inside them, otherwise we may be sending incorrect data between processes and causing the program to 'crash'. With that in mind, the first for loop to be parallelized is the one where we assemble the \textbf{b} which is inside the time marching loop:
+
+\begin{lstlisting}[style=MyC++Style]
+...
+// Assemble b
+M.multiply(b, phi); // b = M*phi^l
+exchangeData(b, Boundaries, myN_b);
+#pragma omp parallel for default(none) shared(myN_p,b,s,AphiFixed)
+for(int m=0; m<myN_p; m++)
+{
+	b[m]	+= Delta_t*s[m] - AphiFixed[m];
+} // b = M*phi^l + Delta_t*s - A_free,fixed*phi_fixed
+...
+\end{lstlisting}
+
+As we can see \textit{after} exchanging the boundary values between processes we create a team of parallel threads with the \textit{pragma omp parallel for} outside the for loop where the \textbf{b} array is assembled. The \textit{myN_p,b,s,AphiFixed} variables will be shared by all the threads.
+
+\begin{lstlisting}[style=MyC++Style]
+// Compute the initial residual
+A.multiply(Aphi, phi, Free, Free);
+exchangeData(Aphi, Boundaries, myN_b); 
+#pragma omp parallel for default(none) shared(N_row, Free, r_old, b, Aphi, d)
+for(m=0; m<N_row; m++){
+	if(Free[m]){
+		r_old[m]	= b[m] - Aphi[m];
+		d[m]		= r_old[m];
+	}
+}
+
+// Solve the linear system
+solve(A, phi, b, Free, Fixed, Boundaries, yourPoints, myN_b, myID);//Changed
+...
+\end{lstlisting}
+
+Then we make the call to the \textit{solve} method where we are going to solve our system of equations using the calculate the conjugate gradient method. Again here the pragmas are inserted in all the for loops after the \textit{exchangeData} call.
+ 
+\begin{lstlisting}[style=MyC++Style]
+...
+// Conjugate Gradient iterative loop
+    while(r_norm>tolerance && k<maxIterations)
+    {
+    	A.multiply(Ad, d, Free, Free);
+		exchangeData(Ad, Boundaries, myN_b);
+		dTAd	= computeInnerProduct(d, Ad, Free, yourPoints, N_row);
+		alpha  	= r_oldTr_old/dTAd;
+        
+		#pragma omp parallel for default(none) shared(N_row, Free, phi, alpha, d)
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				phi[m] += alpha*d[m];
+			}
+		}
+        
+		#pragma omp parallel for default(none) shared(N_row, Free, r, r_old, alpha, Ad)
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				r[m]	= r_old[m] - alpha*Ad[m];
+			}
+		}
+		rTr	= computeInnerProduct(r, r, Free, yourPoints, N_row);
+		beta  	= rTr/r_oldTr_old;
+        
+		#pragma omp parallel for default(none) shared(N_row, Free, d, r, beta )
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				d[m] = r[m] + beta*d[m];
+			}
+		}
+        
+		#pragma omp parallel for default(none) shared (N_row, Free, r_old, r)
+		for(m=0; m<N_row; m++){
+			if(Free[m]){
+				r_old[m] = r[m];
+			}
+		}
+		r_oldTr_old	= rTr;
+		r_norm		= sqrt(rTr);
+		k++;
+	}
+...
+}
+\end{lstlisting}
+
+Finally, the last part where we can add multithreading is the \textit{innerProduct} method. This method computes the inner product of the parameter arrays v1 and v2, so that a private copy the \textit{myInnerProduct} array variable is created for each thread using the reduction clause, the reduction variable is applied to all private copies of the shared variable, and at the end the final result is written to the global shared variable.
+
+\begin{lstlisting}[style=MyC++Style]
+#pragma omp parallel for default(none) 
+		shared(N_row, Free, yourPoints, v1,v2) 
+		reduction (+:myInnerProduct)
+for(int m=0; m<N_row; m++){
+	if(Free[m] && !yourPoints[m]){
+		myInnerProduct += v1[m]*v2[m];
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=MyC++Style]
+
+\end{lstlisting}
 %----------------------------------------------------------
 	
 	\section{Discussion}
 	Write your Discussion here.	
 	
 	\section{Results}
-	Write your Results here.
-	
-%		\begin{figure}
-%		\centering
-%		\includegraphics[width=3.0in]{myfigure}
-%		\caption{Simulation Results}
-%		\label{simulationfigure}
-%	\end{figure}
-	
+
 	\section{Appendices}
 	
 	\textbf{APPENDIX A.} Matlab simulation on a Box grid with Finite Element Method for linear 3D tetrahedral elements and Implicit Euler Method.
@@ -993,7 +1407,6 @@ For our c++ version the time marching loop will be a little bit more complex sin
 	\end{figure}	
 
 	\section{References}
-	
 	
 	\bibliographystyle{amsplain}
 	\bibliography{references}
