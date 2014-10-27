@@ -1343,17 +1343,84 @@ for(int m=0; m<N_row; m++){
 The Hybrid version of the C++ code was added to the $\textit{Assignment2\_MPI.cpp}$ file and can be executed by passing as parameter the path to the grid files folder and the corresponding number of processes. 
 %----------------------------------------------------------
 	
-	\section{Results}
+	\section{Scalability Results}
 
-Example:\\\\
-Whatever the domain type, the flat MPI version and the hybrid version with only
-one MPI process per node systematically give the least efficient results.
+Having our Hybrid MPI-OMP solution ready we began to test scalability across several different version of structured grids. First we made scalability tests on a Box Grid (1861 points). After that we ran scalability tests on a Heat Sink of 350 thousand points, 1.2 millon points and 3.6 millon points.
 \\\\
-Example:\\\\
-The best results are obtained on the hybrid version with (a) a distribution of eight
-MPI processes per node and four OpenMP threads per MPI process for the two
-last test cases, and (b) a distribution of four MPI processes per node and sixteen
-OpenMP threads per MPI process for the first test case.	
+The tests were run on the BlueGene Q high performance computing cluster.
+
+\subsection{Box Grid Scaling}
+Our initial scalability tests was run on a Box Grid of 1861 points. Figure \ref{fig:boxGridScaling} illustrate scaling results. It can be seen that there is no speedup in solving the Heat Equation on this grid on 8 process due the small problem size.
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.9]{scalingBoxGrid.png}
+    \centering
+    \caption{\textit{Box Grid Scaling Results}}
+    \label{fig:boxGridScaling}
+\end{figure}
+
+\subsection{Heat Sink 350k Scaling}
+Because the 350k points Heat Sink grid represents a bigger computational problem, scalability results are more inline with the expected behaviour.
+\\\\
+Figure \ref{fig:350kScaling_1} illustrates the speed up improvement across the tests ran on 1, 8, 16, 32, 64 and 128 processors each one with only 1 thread. The line series displays the theoretical maximum time that may be achieved. The reason for the nonoptimal results lies in the overhead added by MPI and the delay added by the network.
+\\\\
+The speedup when comparing different threads within the same number of process are also promising. In Figure \ref{fig:350kScaling_2} it can be seen that when more threads are added to the same number of process the solution speed increases. For the 64 process x 16 threads and 128 x 16 threads combinations it can be seen that the time step increase instead of decrease, this is again because the 350k points problem size is too small for this computational power.
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.9]{scaling350k_1.png}
+    \centering
+    \caption{\textit{350k points - 1 Thread Heat Sink Scaling Results}}
+    \label{fig:350kScaling_1}
+\end{figure}
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.8]{scaling350k_2.png}
+    \centering
+    \caption{\textit{350k points - ProcessxThread Heat Sink Scaling Results}}
+    \label{fig:350kScaling_2}
+\end{figure}
+
+\subsection{Heat Sink 1.2M Scaling}
+The next set of tests were with a 1.2 millon points Heat Sink grid,  with a problem size increased by a factor approximately of 3.5 compared with the 350k grid. With this problem size it is expected not to have speed problems at a high number of process/thread combinations.
+\\\\
+Figures \ref{fig:12MScaling_1} and Figure \ref{fig:12MScaling_2}
+show the results of the scalability tests. There are positively speedup results when the number of process are increased with any combination of threads, although still at 64processx16threads and 128processx16threads the timestep improvement is not significant. Again, results are below the theoretical expectations due to Mpi and network overhead.
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.9]{scaling12M_1.png}
+    \centering
+    \caption{\textit{1.2M points - 1 Thread Heat Sink Scaling Results}}
+    \label{fig:12MScaling_1}
+\end{figure}
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.8]{scaling12M_2.png}
+    \centering
+    \caption{\textit{1.2M points - ProcessxThread Heat Sink Scaling Results}}
+    \label{fig:12MScaling_2}
+\end{figure}
+
+\subsection{Heat Sink 3.6M Scaling}
+The last set of testing were done against a 3.6 millon points Heat Sink grid. This grid represents the biggest problem size we tested in this assignment.
+
+The results of these test are inline with what we seen in the 1.2M tests. There is a significant reduction of the time in line with the expectations. Figures \ref{fig:36MScaling_1} illustrates the speedup results for different process combinations with 1 thread.
+\\\\
+Because this is the grid's size is bigger in Figure \ref{fig:36MScaling_2} it is clear that the computation is still scalable even with huge computational allocations. The speedup can be seen across all combinations of process and threads.
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.9]{scaling36M_1.png}
+    \centering
+    \caption{\textit{3.6M points - 1 Thread Heat Sink Scaling Results}}
+    \label{fig:36MScaling_1}
+\end{figure}
+
+\begin{figure}[h!]
+    \includegraphics[scale=0.8]{scaling36M_2.png}
+    \centering
+    \caption{\textit{3.6M points - ProcessxThread Heat Sink Scaling Results}}
+    \label{fig:36MScaling_2}
+\end{figure}
+
 	
 	\section{Discussion}
 
